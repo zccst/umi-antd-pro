@@ -12,9 +12,10 @@ const Settings: LayoutSettings & {
   fixedHeader: false,
   fixSiderbar: true,
   colorWeak: false,
-  title: 'Ant Design Pro',
+  title: 'Web3 DevOps',
   pwa: false,
-  logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
+  // logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
+  logo: 'https://static.okx.com/cdn/assets/imgs/237/524AC4AEC70BD408.svg',
   iconfontUrl: '',
 };
 

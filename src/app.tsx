@@ -40,12 +40,12 @@ export async function getInitialState(): Promise<{
     return {
       fetchUserInfo,
       currentUser,
-      settings: { layout: 'mix' },
+      settings: { layout: 'mix', logo: 'https://static.okx.com/cdn/assets/imgs/237/524AC4AEC70BD408.svg' },
     };
   }
   return {
     fetchUserInfo,
-    settings: { layout: 'mix' },
+    settings: { layout: 'mix', logo: 'https://static.okx.com/cdn/assets/imgs/237/524AC4AEC70BD408.svg' },
   };
 }
 

@@ -90,7 +90,7 @@ const Login: React.FC = () => {
       <div className={styles.content}>
         <LoginForm
           logo={<img alt="logo" src="/logo.svg" />}
-          title="Ant Design"
+          title="Web3 DevOps"
           subTitle={intl.formatMessage({
             id: 'pages.layouts.userLayout.title',
           })}
