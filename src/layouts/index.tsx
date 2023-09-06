@@ -4,7 +4,7 @@ import { Outlet } from 'umi';
 const Layout = () => {
   return (
     <div>
-      <h1>公共layout</h1>
+      {/*<h1>公共layout</h1>*/}
       <Outlet />
     </div>
   );

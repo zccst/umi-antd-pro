@@ -72,6 +72,8 @@ export default defineConfig({
         },
       ],
     },
+    /**
+     * */
     {
       path: '/dashboard',
       name: 'dashboard',
@@ -286,9 +288,27 @@ export default defineConfig({
         },
       ],
     },
+     
+    {
+      name: 'contract',
+      icon: '',
+      path: '/contract',
+      routes: [
+        {
+          path: '/contract',
+          redirect: '/contract/call',
+        },
+        {
+          name: 'call',
+          icon: 'smile',
+          path: '/contract/call',
+          component: './contract/call',
+        }
+      ],
+    },
     {
       path: '/',
-      redirect: '/dashboard/analysis',
+      redirect: '/contract/call',
     },
     {
       component: '404',

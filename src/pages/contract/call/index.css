@@ -1,0 +1,44 @@
+/* 左侧 */
+.search-condition-title {
+    margin: 10px 0;
+}
+/* 中间 */
+.method-header {
+    padding: 12px 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.all-open-close {
+    margin-right: 10px;
+}
+.func-read-color .ant-collapse-header-text {
+    /* background-color: #3399FF; 
+    margin-right: 40%;
+    padding: 4px 0 4px 10px;
+    border-radius: 5px;*/
+}
+.func-write-color .ant-collapse-header-text{
+    /* background-color:#FF9966; 
+    margin-right: 40%;
+    padding: 4px 0 4px 10px;
+    border-radius: 5px;*/
+}
+.func-payable-color .ant-collapse-header-text{
+    background-color:#CC0033;
+    margin-right: 40%;
+    padding: 4px 0 4px 10px;
+    border-radius: 5px;
+}
+
+.icon-position {
+    margin-left: 10px;
+}
+.form-position-input {
+    padding: 4px 0;
+}
+.form-position-button {
+    padding: 10px 0;
+    text-align: right;
+}
+/* 右侧 */
