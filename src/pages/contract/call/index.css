@@ -1,3 +1,44 @@
+/* 定制连接钱包样式 */
+:root {
+    --account-center-position-top: 42px;
+    --account-center-position-right: 30px;
+  }
+
+.user-info-basic {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.6);
+    margin: 0.25rem 0.25rem 0 0.25rem;
+    border: 1px solid #eeeeee;
+    border-bottom: 0;
+    border-radius: 4px 4px 0 0;
+    position: relative;
+    padding: 4px 320px 4px 10px;
+}
+.user-info-basic .header-align-right {
+    padding-right: 28px;
+}
+.user-info-container {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.6);
+    margin: 0 0.25rem 0.25rem 0.25rem;
+    border: 1px solid #eeeeee;
+    border-top: 0;
+    border-radius: 0 0 4px 4px;
+    position: relative;
+    padding: 4px 4px 4px 10px;
+}
+  
+
+
+
 /* 左侧 */
 .search-condition-title {
     margin: 10px 0;
@@ -16,13 +57,14 @@
     /* background-color: #3399FF; 
     margin-right: 40%;
     padding: 4px 0 4px 10px;
-    border-radius: 5px;*/
+    border-radius: 5px;
+    color: white; */
 }
 .func-write-color .ant-collapse-header-text{
     /* background-color:#FF9966; 
     margin-right: 40%;
     padding: 4px 0 4px 10px;
-    border-radius: 5px;*/
+    border-radius: 5px; */
 }
 .func-payable-color .ant-collapse-header-text{
     background-color:#CC0033;
@@ -41,4 +83,26 @@
     padding: 10px 0;
     text-align: right;
 }
+.reset-btn-visible {
+    visibility: visible;
+}
+.reset-btn-hidden {
+    visibility: hidden;
+}
+
+.form-position-result {
+    background-color: transparent;
+    border: none
+}
+textarea.form-position-result:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none;
+    /* background-color: aqua; */
+}
+
 /* 右侧 */
+.address-active a {
+    color: rgb(22, 119, 255);
+    font-weight: 700;
+}

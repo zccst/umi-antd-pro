@@ -21,7 +21,7 @@ import Header from './views/Header/Header'
 
 let provider : any
 
-const App = () => {
+const App = (props: any) => {
   const [{ wallet }, connect, disconnect, updateBalances, setWalletModules] =
     useConnectWallet()
   const [{ chains, connectedChain, settingChain }, setChain] = useSetChain()
@@ -38,6 +38,7 @@ const App = () => {
   const [toChain, setToChain] = useState('0x5')
   const [locale, setLocale] = useState('en')
   const [accountCenterSize, setAccountCenterSize] = useState('normal')
+  
 
   useEffect(() => {
     setWeb3Onboard(initWeb3Onboard)
@@ -113,6 +114,8 @@ const App = () => {
 
   if (!web3Onboard) return <div>Loading...</div>
 
+  console.log('子组件props.addr', props.addr);
+
   return (
     <main>
       <section >
@@ -121,7 +124,7 @@ const App = () => {
             当前ABI： 项目1 - prod - 合约名称1-abi - v1.1[latest]
           </div>
           <div>
-            <button
+            {wallet && (<button
               className="bn-demo-button"
               onClick={async () => {
                 const walletsConnected = await disconnect(wallet)
@@ -131,6 +134,7 @@ const App = () => {
             >
               断开钱包
             </button>
+            )}
           </div>
         </div>
         <div className='user-info-container'>
@@ -151,9 +155,11 @@ const App = () => {
               <div className='header-align-left'>
                 <Search
                   placeholder="可输入临时地址，或从右侧选择常用地址"
+                  style={{ width: 432 }} 
                   allowClear
                   enterButton="At Address"
                   size="large"
+                  value={props.activeAddr}
                   onSearch={ () => {
                     console.log("At Address");
                   }

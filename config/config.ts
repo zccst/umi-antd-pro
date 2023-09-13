@@ -303,6 +303,12 @@ export default defineConfig({
           icon: 'smile',
           path: '/contract/call',
           component: './contract/call',
+        },
+        {
+          name: 'abi',
+          icon: 'smile',
+          path: '/contract/abi',
+          component: './contract/call/abi',
         }
       ],
     },
