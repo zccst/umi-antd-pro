@@ -309,6 +309,12 @@ export default defineConfig({
           icon: 'smile',
           path: '/contract/abi',
           component: './contract/call/abi',
+        },
+        {
+          name: 'address',
+          icon: 'smile',
+          path: '/contract/address',
+          component: './contract/call/address',
         }
       ],
     },
