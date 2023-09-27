@@ -264,7 +264,7 @@ const Address: React.FC = () => {
         valueType: 'option',
         key: 'option',
         render: (text, record, _, action) => [
-          <a onClick={() => {
+          <a key='edit' onClick={() => {
             setOpen(true);
             setExtraObj(record);
           }}>
@@ -283,12 +283,6 @@ const Address: React.FC = () => {
               cardBordered  // Table 和 Search 外围 Card 组件的边框
               request={async (params = {}, sort, filter) => {
                   console.log('params', params, sort, filter);
-                  params = {
-                    ...params,
-                    page: params.current,
-                    size: params.pageSize,
-                  };
-                  console.log('params', params);
                   let ret: any = {};
                   await request<{
                       data: AddressItem[];
@@ -309,6 +303,7 @@ const Address: React.FC = () => {
                       total: 0,
                     });
                   }
+
                   const res = {
                     data: ret.data.list,
                     // success 请返回 true，

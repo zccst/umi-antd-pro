@@ -7,7 +7,9 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import request from 'umi-request';
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
-import { abiUrlPrefix } from '../../../utils/constant'
+import { abiUrlPrefix, deptProjUrl, CHAIN_LIST } from '../../../utils/constant'
+
+
 
 type AbiItem = {
     id: number;
@@ -37,6 +39,8 @@ interface CollectionCreateFormProps {
   onCancel: () => void;
 }
 
+let isLocalEdit = false;
+
 const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   open,
   confirmLoading,
@@ -45,6 +49,30 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   onCancel,
 }) => {
   const [form] = Form.useForm();
+  
+  const [currFormDeptId, setCurrFormDeptId] = useState(extraObj.item.department_id); 
+  const [currFormProjId, setCurrFormProjId] = useState(extraObj.item.project_id); 
+
+  const onFormDepartmentSelect = (selected: any) => {
+    const options = extraObj.optionList[selected]['child'].filter((item: any) => item.value != 'all')
+    console.log('onFormDepartmentSelect', selected, options[0]?.value);
+    setCurrFormDeptId(selected);
+    setCurrFormProjId(options[0]?.value);
+    isLocalEdit = true;
+    setTimeout(() => {
+      form.setFieldValue('department_id', selected);
+      form.setFieldValue('project_id', options[0]?.value);
+    }, 20);
+  }
+  const onFormProjectSelect = (selected: any) => {
+    console.log('onProjectSelect', selected);
+    setCurrFormProjId(selected);
+    isLocalEdit = true;
+    setTimeout(() => {
+      form.setFieldValue('project_id', selected);
+    }, 20);
+  }
+
   const titleObj: any = {
     new: "新建",
     copy: "复制",
@@ -76,16 +104,24 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
     department_id: '' + extraObj.item.department_id,
     project_id: '' + extraObj.item.project_id,
   }
-  console.log('defaultV', extraObj.type, defaultV);
+  // console.log('defaultV', extraObj.type, defaultV);
   
   setTimeout(() => {
-    form.setFieldsValue(defaultV);
+    // 本地编辑状态下，改变state不重置表单。直到弹窗消失（提交或取消）
+    if (!isLocalEdit) {
+      form.setFieldsValue(defaultV);
+    }
   }, 10);
 
   const onLocalCancel = () => {
     form.resetFields();
+    isLocalEdit = false;
+    setCurrFormDeptId(extraObj.item.department_id);
+    setCurrFormProjId(extraObj.item.project_id);
     onCancel();
   }
+
+  // console.log('default render value', currFormDeptId, extraObj.optionList[currFormDeptId]);
 
   return (
     <Modal
@@ -99,6 +135,9 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           .validateFields()
           .then((values) => {
             form.resetFields();
+            isLocalEdit = false;
+            setCurrFormDeptId(extraObj.item.department_id);
+            setCurrFormProjId(extraObj.item.project_id);
             onCreate(extraObj.type, values);
           })
           .catch((info) => {
@@ -150,10 +189,11 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           name="department_id"
           rules={[{ required: true, message: '请选择所属部门！' }]}
         >
-          <Select disabled={(extraObj.type === 'upgrade') ? true : false}>
-            <Select.Option value="1">DEX</Select.Option>
-            <Select.Option value="2">NFT</Select.Option>
-            <Select.Option value="3">EARN</Select.Option>
+          <Select 
+            disabled={(extraObj.type === 'upgrade') ? true : false}
+            options={extraObj.deptFormOptions}
+            onSelect={onFormDepartmentSelect}
+          >
           </Select>
         </Form.Item>
         <Form.Item 
@@ -161,10 +201,15 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           name="project_id"
           rules={[{ required: true, message: '请选择所属项目！' }]}
         >
-          <Select disabled={(extraObj.type === 'upgrade') ? true : false}>
-            <Select.Option value="1">dex_testProject</Select.Option>
-            <Select.Option value="2">nft_testProject</Select.Option>
-            <Select.Option value="3">earn_testProject</Select.Option>
+          <Select 
+            disabled={(extraObj.type === 'upgrade') ? true : false}
+            defaultValue={extraObj.item.project_id}
+            value={currFormProjId}
+            options={extraObj.optionList[currFormDeptId] 
+              ? extraObj.optionList[currFormDeptId]['child'].filter((item: any) => item.value != 'all') 
+              : []}
+            onSelect={onFormProjectSelect}
+          >
           </Select>
         </Form.Item>
         <Form.Item name="abi" hidden={(extraObj.type === 'edit') ? true : false}  label="abi正文"  rules={[{ required: true, message: '内容不能为空！' }]}>
@@ -180,14 +225,11 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
                       {...restField}
                       name={[name, 'chain_name']}
                     >
-                      <Select style={{ width: 140 }}>
-                        <Select.Option value="Ethereum">ETH</Select.Option>
-                        <Select.Option value="Goerli">Goerli</Select.Option>
-                        <Select.Option value="Binance">Binance</Select.Option>
-                        <Select.Option value="Polygon">Polygon</Select.Option>
-                        <Select.Option value="Fantom">Fantom</Select.Option>
-                        <Select.Option value="Optimism">Optimism</Select.Option>
-                        <Select.Option value="Arbitrum">Arbitrum</Select.Option>
+                      <Select 
+                        style={{ width: 140 }} 
+                        defaultValue={CHAIN_LIST[0].value}
+                        options={CHAIN_LIST}
+                      >
                       </Select>
                     </Form.Item>
                     <Form.Item
@@ -225,11 +267,79 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 const Abi: React.FC = () => {
     const actionRef = useRef<ActionType>();
     const [messageApi, contextHolder] = message.useMessage();
-
     const [open, setOpen] = useState(false);
     // const [modalItem, setModalItem] = useState<{[key: string]: any}>({});
-    const [extraObj, setExtraObj] = useState({type: '', item: {}});
+    const [extraObj, setExtraObj] = useState({type: '', item: {}, deptFormOptions:[], optionList: {}});
     const [confirmLoading, setConfirmLoading] = useState(false);
+
+    // 部门project列表，从服务端获取
+    const [deptProjListFromServer, setDeptProjListFromServer] = useState<{[key: string]: any}>([]);
+    
+    const queryURLObj: any = new URLSearchParams(window.location.search);
+    const defaultDeptId = queryURLObj.get("department_id");
+    const defaultProjId = queryURLObj.get("project_id");
+    // console.log('defaultDeptId, defaultProjId', defaultDeptId, defaultProjId);
+    // 当前project
+    const [currDepartmentId, setDepartmentId] = useState(defaultDeptId); // department_id是对象的key
+    const [currProjectId, setCurrProjectId] = useState(defaultProjId); // project_id是对象的key
+    // const [currProjectList, setCurrProjectList] = useState<{[key: number]: any}>([]); // project数组
+
+    // const deptRequest = async () => {
+    //   return departmentList;
+    // };
+    const onDepartmentSelect = (selected: any) => {
+      setDepartmentId(selected);
+      setCurrProjectId('all');
+    }
+    const onProjectSelect = (selected: any) => {
+      console.log('onProjectSelect', selected);
+      setCurrProjectId(selected);
+    }
+    const projRequest = async () => {
+      const projList: any = [];
+      return projList;
+    }
+
+    const getDeptOptionsForForm = (data: any) => {
+      const deptKeys: any = Object.keys(data);
+      let deptOptions: any = [];
+      for (let i = 0; i < deptKeys.length; i++) {
+        deptOptions.push({
+          value: deptKeys[i],
+          label: data[deptKeys[i]].name,
+        });
+      }
+      return deptOptions;
+    }
+
+    useEffect(() => {
+      request
+        .get(deptProjUrl)
+        .then(function(response) {
+          if (response.code === 0) {
+            const data = response.data;
+            let targetOptionObj: any = {};
+            for (let i = 0; i < data.length; i++) {
+              const tmpArr1 = [{value: 'all', label: '全部'}];
+              const tmpArr2 = data[i].projects.map((item: any) => {
+                return {
+                  value: '' + item.id,
+                  label: item.name,
+                }
+              })
+              targetOptionObj['' + data[i].dept_id] = {
+                name: data[i].dept_name,
+                child: tmpArr1.concat(tmpArr2),
+              };
+            }
+            // console.log('targetOptionObj', targetOptionObj);
+            setDeptProjListFromServer(targetOptionObj);
+          }
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    }, []);
     
     const onCreate = (type: any, values: any) => {
       console.log('Received values of form: ', type, values);
@@ -332,7 +442,7 @@ const Abi: React.FC = () => {
         dataIndex: 'name',
         copyable: true,
         ellipsis: true,
-        tip: '名称过长会自动收缩',
+        // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
         formItemProps: {
           rules: [
@@ -355,6 +465,7 @@ const Abi: React.FC = () => {
         ellipsis: true,
         valueType: 'select',
         valueEnum: {
+          all: {text: '全部'},
           true: {
             text: '是',
             status: 'Success',
@@ -380,7 +491,7 @@ const Abi: React.FC = () => {
           const addrArr = record.addrs.map((item: any, index) => {
             return '[' + item.chain_name + '] ' +  item.addr + ' (' + item.tag + ')';
           });
-          console.log('record.addrs', record.addrs);
+          // console.log('record.addrs', record.addrs);
           return record.addrs.length ? <Tooltip placement="bottom" title={addrArr.join('\n')} overlayStyle={{ maxWidth: 600 }}>
             <a>{record.addrs.length} <QuestionCircleOutlined /></a>
           </Tooltip> : '0';
@@ -423,15 +534,59 @@ const Abi: React.FC = () => {
       // },
       {
         title: '部门',
-        key: 'department_name',
-        dataIndex: 'department_name',
+        key: 'department_id',
+        dataIndex: 'department_id',
         valueType: 'select',
+        fieldProps: {
+          placeholder: "请选择部门",
+          // onChange: (val: any) => {
+          //   console.log('setCurrProjectId', val);
+          //   setCurrProjectId('all');
+          // }
+        },
+        // request: deptRequest,
+        renderFormItem: (item, { type, defaultRender }, form) => {
+          // form.setFieldValue("project_id", 'all');
+          const keys: any = Object.keys(deptProjListFromServer);
+          let options: any = [];
+          for (let i = 0; i < keys.length; i++) {
+            options.push({
+              value: '' + keys[i],
+              label: deptProjListFromServer[keys[i]].name,
+            });
+          }
+          return <Select 
+            onSelect={onDepartmentSelect}
+            options={options}
+          >
+          </Select>
+        },
+        render:  (data, record, _)=> {
+          return <span>{record.department_name}</span>;
+        }
       },
       {
         title: '项目',
-        key: 'project_name',
-        dataIndex: 'project_name',
+        key: 'project_id',
+        dataIndex: 'project_id',
         valueType: 'select',
+        fieldProps: (form, config: any) => {
+          // console.log('project_id fieldProps', form, config);
+        },
+        renderFormItem: (item, { type, defaultRender }, form) => {
+          setTimeout(() => {
+            form.setFieldValue('project_id', currProjectId);
+          }, 10);
+          return <Select 
+            value={currProjectId}
+            onSelect={onProjectSelect}
+            options={deptProjListFromServer[currDepartmentId] ? deptProjListFromServer[currDepartmentId]['child'] : []}
+          >
+          </Select>
+        },
+        render:  (data, record, _)=> {
+          return <span>{record.project_name}</span>;
+        }
       },
       {
         title: '最后修改时间',
@@ -464,11 +619,13 @@ const Abi: React.FC = () => {
           <Popconfirm key="delete" title="确定要删除吗" onConfirm={() => handleDelete(record.id)}>
             <a>删除</a>
           </Popconfirm>,
-          <a onClick={() => {
+          <a key='copy' onClick={() => {
             setOpen(true);
             setExtraObj({
               item: record,
               type: 'copy',
+              deptFormOptions: getDeptOptionsForForm(deptProjListFromServer),
+              optionList: deptProjListFromServer,
             })
           }}>复制</a>,
           <TableDropdown
@@ -479,11 +636,15 @@ const Abi: React.FC = () => {
                 setExtraObj({
                   item: record,
                   type: 'upgrade',
+                  deptFormOptions: getDeptOptionsForForm(deptProjListFromServer),
+                  optionList: deptProjListFromServer,
                 })
               } else if (operate === 'edit') {
                 setExtraObj({
                   item: record,
                   type: 'edit',
+                  deptFormOptions: getDeptOptionsForForm(deptProjListFromServer),
+                  optionList: deptProjListFromServer,
                 })
               }
             }}
@@ -505,12 +666,9 @@ const Abi: React.FC = () => {
               cardBordered  // Table 和 Search 外围 Card 组件的边框
               request={async (params = {}, sort, filter) => {
                   console.log('params', params, sort, filter);
-                  params = {
-                    ...params,
-                    page: params.current,
-                    size: params.pageSize,
-                  };
-                  console.log('params', params);
+                  if (params['project_id'] === 'all') {
+                    params['project_id'] = ''
+                  }
                   let ret: any = {};
                   await request<{
                       data: AbiItem[];
@@ -518,9 +676,9 @@ const Abi: React.FC = () => {
                     params,
                   }).then(r => ret = r);
                   
-                  console.log('ret', ret, typeof ret);
+                  // console.log('ret', ret, typeof ret);
 
-                  if (ret.code > 0) {
+                  if (ret.code != 0) {
                     messageApi.open({
                       type: 'error',
                       content: '获取地址列表失败，原因：' + ret.msg,
@@ -531,6 +689,7 @@ const Abi: React.FC = () => {
                       total: 0,
                     });
                   }
+
                   const res = {
                     data: ret.data.list,
                     // success 请返回 true，
@@ -566,21 +725,23 @@ const Abi: React.FC = () => {
               form={{
                   // 由于配置了 transform，提交的参与与定义的不同这里需要转化一下
                   syncToUrl: (values, type) => {
-                      console.log('form', values, type);
+                      // console.log('form', values, type);
                       if (type === 'get') {
-                          console.log('form + get', values, type);
+                          // console.log('form + get', values, type);
                           return {
                               ...values,
                               created_at: [values.startTime, values.endTime],
                           };
                       }
-                      console.log('form + created_at', values, type);
+                      // console.log('form + created_at', values, type);
                       return values;
                   },
               }}
               pagination={{
                   pageSize: 10,
-                  onChange: (page) => console.log(page),
+                  onChange: (page) => {
+                    // console.log(page)
+                  },
               }}
               dateFormatter="string"
               headerTitle="高级表格"
@@ -594,6 +755,8 @@ const Abi: React.FC = () => {
                           setExtraObj({
                             item: {},
                             type: 'new',
+                            deptFormOptions: getDeptOptionsForForm(deptProjListFromServer),
+                            optionList: deptProjListFromServer,
                           })
                       }}
                       type="primary"
