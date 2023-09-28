@@ -7,7 +7,7 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import request from 'umi-request';
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
-import { addrUrlPrefix } from '../../../utils/constant'
+import { addrUrlPrefix, deptProjUrl } from '../../../utils/constant'
 
 type AddressItem = {
     id: number;
@@ -124,7 +124,56 @@ const Address: React.FC = () => {
     // const [modalItem, setModalItem] = useState<{[key: string]: any}>({});
     const [extraObj, setExtraObj] = useState({});
     const [confirmLoading, setConfirmLoading] = useState(false);
+
+    // 部门project列表，从服务端获取
+    const [deptProjListFromServer, setDeptProjListFromServer] = useState<{[key: string]: any}>([]);
     
+    const queryURLObj: any = new URLSearchParams(window.location.search);
+    const defaultDeptId = queryURLObj.get("department_id") || '1';
+    const defaultProjId = queryURLObj.get("project_id") || 'all';
+    // 当前project
+    const [currDepartmentId, setDepartmentId] = useState(defaultDeptId);
+    const [currProjectId, setCurrProjectId] = useState(defaultProjId);
+    const onDepartmentSelect = (selected: any) => {
+      setDepartmentId(selected);
+      setCurrProjectId('all');
+    }
+    const onProjectSelect = (selected: any) => {
+      console.log('onProjectSelect', selected);
+      setCurrProjectId(selected);
+    }
+
+    useEffect(() => {
+      request
+        .get(deptProjUrl)
+        .then(function(response) {
+          if (response.code === 0) {
+            const data = response.data;
+            let targetOptionObj: any = {};
+            for (let i = 0; i < data.length; i++) {
+              const tmpArr1 = [{value: 'all', label: '全部'}];
+              const tmpArr2 = data[i].projects.map((item: any) => {
+                return {
+                  value: '' + item.id,
+                  label: item.name,
+                }
+              })
+              targetOptionObj['' + data[i].dept_id] = {
+                name: data[i].dept_name,
+                child: tmpArr1.concat(tmpArr2),
+              };
+            }
+            // console.log('targetOptionObj', targetOptionObj);
+            setDeptProjListFromServer(targetOptionObj);
+          }
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    }, []);
+
+
+
     const onCreate = (values: any) => {
       console.log('Received values of form: ', values);
       const param = {
@@ -166,7 +215,7 @@ const Address: React.FC = () => {
         dataIndex: 'abi_name',
         copyable: true,
         ellipsis: true,
-        tip: '名称过长会自动收缩',
+        // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
         formItemProps: {
           rules: [
@@ -226,15 +275,50 @@ const Address: React.FC = () => {
       },
       {
         title: '部门',
-        key: 'department_name',
-        dataIndex: 'department_name',
+        key: 'department_id',
+        dataIndex: 'department_id',
         valueType: 'select',
+        fieldProps: {
+          placeholder: "请选择部门",
+        },
+        renderFormItem: (item, { type, defaultRender }, form) => {
+          const keys: any = Object.keys(deptProjListFromServer);
+          let options: any = [];
+          for (let i = 0; i < keys.length; i++) {
+            options.push({
+              value: '' + keys[i],
+              label: deptProjListFromServer[keys[i]].name,
+            });
+          }
+          return <Select 
+            onSelect={onDepartmentSelect}
+            options={options}
+          >
+          </Select>
+        },
+        render:  (data, record, _)=> {
+          return <span>{record.department_name}</span>;
+        }
       },
       {
         title: '项目',
-        key: 'project_name',
-        dataIndex: 'project_name',
+        key: 'project_id',
+        dataIndex: 'project_id',
         valueType: 'select',
+        renderFormItem: (item, { type, defaultRender }, form) => {
+          setTimeout(() => {
+            form.setFieldValue('project_id', currProjectId);
+          }, 10);
+          return <Select 
+            value={currProjectId}
+            onSelect={onProjectSelect}
+            options={deptProjListFromServer[currDepartmentId] ? deptProjListFromServer[currDepartmentId]['child'] : []}
+          >
+          </Select>
+        },
+        render:  (data, record, _)=> {
+          return <span>{record.project_name}</span>;
+        }
       },
       {
         title: '最后修改时间',
@@ -283,6 +367,9 @@ const Address: React.FC = () => {
               cardBordered  // Table 和 Search 外围 Card 组件的边框
               request={async (params = {}, sort, filter) => {
                   console.log('params', params, sort, filter);
+                  if (params['project_id'] === 'all') {
+                    params['project_id'] = ''
+                  }
                   let ret: any = {};
                   await request<{
                       data: AddressItem[];
@@ -292,7 +379,7 @@ const Address: React.FC = () => {
 
                   console.log('ret', ret, typeof ret);
 
-                  if (ret.code > 0) {
+                  if (ret.code !== 0) {
                     messageApi.open({
                       type: 'error',
                       content: '获取地址列表失败，原因：' + ret.msg,
@@ -305,7 +392,7 @@ const Address: React.FC = () => {
                   }
 
                   const res = {
-                    data: ret.data.list,
+                    data: ret.data.list || [],
                     // success 请返回 true，
                     // 不然 table 会停止解析数据，即使有数据
                     success: ret.code === 0 ? true: false,

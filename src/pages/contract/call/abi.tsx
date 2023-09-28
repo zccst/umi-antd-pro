@@ -276,8 +276,8 @@ const Abi: React.FC = () => {
     const [deptProjListFromServer, setDeptProjListFromServer] = useState<{[key: string]: any}>([]);
     
     const queryURLObj: any = new URLSearchParams(window.location.search);
-    const defaultDeptId = queryURLObj.get("department_id");
-    const defaultProjId = queryURLObj.get("project_id");
+    const defaultDeptId = queryURLObj.get("department_id") || '1';
+    const defaultProjId = queryURLObj.get("project_id") || 'all';
     // console.log('defaultDeptId, defaultProjId', defaultDeptId, defaultProjId);
     // 当前project
     const [currDepartmentId, setDepartmentId] = useState(defaultDeptId); // department_id是对象的key
@@ -678,7 +678,7 @@ const Abi: React.FC = () => {
                   
                   // console.log('ret', ret, typeof ret);
 
-                  if (ret.code != 0) {
+                  if (ret.code !== 0) {
                     messageApi.open({
                       type: 'error',
                       content: '获取地址列表失败，原因：' + ret.msg,
@@ -691,7 +691,7 @@ const Abi: React.FC = () => {
                   }
 
                   const res = {
-                    data: ret.data.list,
+                    data: ret.data.list || [],
                     // success 请返回 true，
                     // 不然 table 会停止解析数据，即使有数据
                     success: ret.code === 0 ? true: false,
