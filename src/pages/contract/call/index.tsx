@@ -12,15 +12,19 @@ import {
 } from './services'
 import { ethers } from 'ethers'
 import { GridContent } from '@ant-design/pro-components';
-import { Tree, Tabs, Collapse, Switch, Form, Input, Select, Button, Avatar, List, Col, Dropdown, Menu, Row } from 'antd';
+import { Tree, Tabs, Collapse, Switch, Form, Input, Select, Button, Avatar, List, Col, Dropdown, Menu, Row, message, version } from 'antd';
 const { Panel } = Collapse;
 const { TextArea, Search } = Input;
 import type { DataNode, TreeProps } from 'antd/es/tree';
 import { DownOutlined, SearchOutlined, ReadOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { Suspense, useState, useEffect } from 'react';
 import ReactJson from 'react-json-view'
+
+import request from 'umi-request';
+
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
+import { deptProjUrl, getProjListUrl, getAbiInfoUrl } from '../../../utils/constant'
 import './index.css'
 import thumbtackActive from './icons/thumbtack-active.jpg'
 import thumbtackDefault from './icons/thumbtack-default.jpg'
@@ -48,9 +52,21 @@ let provider : any
 const Call: React.FC = () => {
     const [{ wallet }, connect, disconnect] = useConnectWallet()
     const connectedWallets = useWallets()
-    const [web3Onboard, setWeb3Onboard] = useState({})
+    const [web3Onboard, setWeb3Onboard] = useState<{[key: string]: any}>({});
 
     const [form] = Form.useForm();
+    
+    
+
+    // 部门project列表，从服务端获取
+    const [deptProjListFromServer, setDeptProjListFromServer] = useState({deptList: [], projListbyDept: {}});
+    const [currDepartmentId, setCurrDepartmentId] = useState('2'); // 默认NFT
+    const [currProjectId, setCurrProjectId] = useState('');
+    const [currEnv, setCurrEnv] = useState('prod');
+
+    // treeDate
+    const [treeDataSource, setTreeDataSource] = useState([]);
+    // const [abiInfoFromServe, setAbiInfoFromServe] = useState({ abi: '', read_funcs: [], write_funcs: [], addrs: []});
     
     let [methodKey, setMethodKey] = useState(['']);
     let [methodList, setMethodList] = useState([{}]);
@@ -60,7 +76,19 @@ const Call: React.FC = () => {
 
 
     useEffect(() => {
-        setWeb3Onboard(initWeb3Onboard)
+        setWeb3Onboard(initWeb3Onboard);
+        // console.log('setWeb3Onboard(initWeb3Onboard)', web3Onboard); web3Onboard为什么是空对象
+        // web3Onboard && web3Onboard.state && web3Onboard.state.actions.updateAccountCenter({
+        //     minimal: false
+        // })
+        return () => {
+            // 处理已登录的面板
+            console.log('updateAccountCenter({minimal: true})');
+            // setWeb3Onboard({})
+            // web3Onboard && web3Onboard.state && web3Onboard.state.actions.updateAccountCenter({
+            //     minimal: true
+            // })
+        }
     }, [])
     
     useEffect(() => {
@@ -97,6 +125,45 @@ const Call: React.FC = () => {
     }, [wallet])
 
 
+    useEffect(() => {
+        request
+          .get(deptProjUrl)
+          .then(function(response) {
+            if (response.code === 0) {
+              const data = response.data;
+              let targetOptionObj: any = {};
+              let deptList: any = [];
+              for (let i = 0; i < data.length; i++) {
+                // const tmpArr1 = [{value: 'all', label: '全部'}];
+                const tmpArr2 = data[i].projects.map((item: any) => {
+                  return {
+                    value: '' + item.id,
+                    label: item.name,
+                  }
+                })
+                targetOptionObj['' + data[i].dept_id] = {
+                  name: data[i].dept_name,
+                //   child: tmpArr1.concat(tmpArr2),
+                  child: tmpArr2,
+                };
+                deptList.push({
+                    value: '' + data[i].dept_id,
+                    label: data[i].dept_name,
+                });
+              }
+              // console.log('targetOptionObj', targetOptionObj);
+              setDeptProjListFromServer({
+                deptList: deptList,
+                projListbyDept: targetOptionObj,
+              });
+            }
+          })
+          .catch(function(error) {
+            console.log(error);
+          });
+      }, []);
+
+
 
     // 顶部
     const onAtAddress= () => {
@@ -119,262 +186,151 @@ const Call: React.FC = () => {
     // 左侧 select查询
     const deptHandleChange = (value: string) => {
         console.log(`selected ${value}`);
+        setCurrDepartmentId(value);
+        const projectArr = (deptProjListFromServer.projListbyDept as any)[value]?.child;
+        projectArr.length ? setCurrProjectId(projectArr[0].value) : ''; //第0个元素
     };
     const projectHandleChange = (value: string) => {
         console.log(`selected ${value}`);
+        setCurrProjectId(value);
     };
     const envHandleChange = (value: string) => {
         console.log(`selected ${value}`);
+        setCurrEnv(value);
     };
     const onSearch = () => {
-        console.log(`search`);
+        const proj = currProjectId;
+        if (!proj) {
+            message.warning('请先从项目下拉列表中选择一个项目，再查询！');
+            return false;
+        }
+        const params = {
+            dept_id: +currDepartmentId,
+            project_id: +currProjectId,
+            env: currEnv
+        }
+        console.log(`search`, params);
+        request
+            .get(getProjListUrl, {
+                params
+            })
+            .then(function(response) {
+                console.log(response);
+                if (response.code === 0) {
+                    const data = response.data;
+                    const treeDataRoot = data.abis.map((item: any, index: number) => {
+                        const childArr = item.versions.map((version: any, i: number) => {
+                            return {
+                                title: version.version,
+                                key: index + '-' + version.id,
+                            }
+                        });
+                        return {
+                            title: item.name + '[' + (item.updatable ? '可升级' : '不可升级') + ']',
+                            key: index,
+                            children: childArr
+                        }
+                    });
+
+                    setTreeDataSource(treeDataRoot)
+                }
+            })
+            .catch(function(error) {
+                console.log(error);
+            });
     };
     // 左侧 树-数据源
-    const treeData: DataNode[] = [
-        {
-          title: 'parent 1',
-          key: '0-0',
-          children: [
-            {
-              title: 'parent 1-0',
-              key: '0-0-0',
-              children: [
-                {
-                  title: 'leaf',
-                  key: '0-0-0-0',
-                },
-                {
-                  title: 'leaf',
-                  key: '0-0-0-1',
-                },
-                {
-                  title: 'leaf',
-                  key: '0-0-0-2',
-                },
-              ],
-            },
-            {
-              title: 'parent 1-1',
-              key: '0-0-1',
-              children: [
-                {
-                  title: 'leaf',
-                  key: '0-0-1-0',
-                },
-              ],
-            },
-            {
-              title: 'parent 1-2',
-              key: '0-0-2',
-              children: [
-                {
-                  title: 'leaf',
-                  key: '0-0-2-0',
-                },
-                {
-                  title: 'leaf',
-                  key: '0-0-2-1',
-                },
-              ],
-            },
-          ],
-        },
-    ];
+    // const treeData: DataNode[] = [
+    //     {
+    //       title: 'parent 1',
+    //       key: '0-0',
+    //       children: [
+    //         {
+    //           title: 'parent 1-0',
+    //           key: '0-0-0',
+    //           children: [
+    //             {
+    //               title: 'leaf',
+    //               key: '0-0-0-0',
+    //             },
+    //             {
+    //               title: 'leaf',
+    //               key: '0-0-0-1',
+    //             },
+    //             {
+    //               title: 'leaf',
+    //               key: '0-0-0-2',
+    //             },
+    //           ],
+    //         },
+    //         {
+    //           title: 'parent 1-1',
+    //           key: '0-0-1',
+    //           children: [
+    //             {
+    //               title: 'leaf',
+    //               key: '0-0-1-0',
+    //             },
+    //           ],
+    //         },
+    //         {
+    //           title: 'parent 1-2',
+    //           key: '0-0-2',
+    //           children: [
+    //             {
+    //               title: 'leaf',
+    //               key: '0-0-2-0',
+    //             },
+    //             {
+    //               title: 'leaf',
+    //               key: '0-0-2-1',
+    //             },
+    //           ],
+    //         },
+    //       ],
+    //     },
+    // ];
     const onTreeSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
         console.log('selected', selectedKeys, info);
+        if (!selectedKeys.length) {
+            message.warning('没有选中树节点，请先选择节点！');
+            return false;
+        }
+        const params = {
+            id: (selectedKeys[0] as any).split('-')[1],
+        }
+        console.log(`abi/info`, params);
         // 发送请求
-        // 读写方法
-        const read_funcs = [
-            {
-                "func_name":"_totalSupply",
-                "payable":false,
-                "inputs":[]
-            },
-            {
-                "func_name":"allowance",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name": "tokenOwner",
-                        "p_type":"address"
-                    },
-                    {
-                        "p_name": "spender",
-                        "p_type":"address"
-                    }
-                ]
-            },
-            {
-                "func_name":"balanceOf",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name": "tokenOwner",
-                        "p_type":"address"
-                    }
-                ]
-            },
-            {
-                "func_name":"decimals",
-                "payable":false,
-                "inputs":[
-                ]
-            },
-            {
-                "func_name":"name",
-                "payable":false,
-                "inputs":[
-                ]
-            },
-            {
-                "func_name":"safeAdd",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name": "a",
-                        "p_type":"uint256"
-                    },
-                    {
-                        "p_name": "b",
-                        "p_type":"uint256"
-                    }
-                ]
-            },
-            {
-                "func_name":"safeDiv",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name": "a",
-                        "p_type":"uint256"
-                    },
-                    {
-                        "p_name": "b",
-                        "p_type":"uint256"
-                    }
-                ]
-            },
-            {
-                "func_name":"safeMul",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name": "a",
-                        "p_type":"uint256"
-                    },
-                    {
-                        "p_name": "b",
-                        "p_type":"uint256"
-                    }
-                ]
-            },
-            {
-                "func_name":"safeSub",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name": "a",
-                        "p_type":"uint256"
-                    },
-                    {
-                        "p_name": "b",
-                        "p_type":"uint256"
-                    }
-                ]
-            },
-            {
-                "func_name":"symbol",
-                "payable":false,
-                "inputs":[
-                ]
-            },
-            {
-                "func_name":"totalSupply",
-                "payable":false,
-                "inputs":[
-                ]
-            },
-        ];
-        const write_funcs = [
-            {
-                "func_name":"approve",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name":"spender",
-                        "p_type":"address"
-                    },
-                    {
-                        "p_name":"tokens",
-                        "p_type":"uint256"
-                    }
-                ]
-            },
-            {
-                "func_name":"transfer",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name":"to",
-                        "p_type":"address"
-                    },
-                    {
-                        "p_name":"tokens",
-                        "p_type":"uint256"
-                    }
-                ]
-            },
-            {
-                "func_name":"transferFrom",
-                "payable":false,
-                "inputs":[
-                    {
-                        "p_name":"from",
-                        "p_type":"address"
-                    },
-                    {
-                        "p_name":"to",
-                        "p_type":"address"
-                    },
-                    {
-                        "p_name":"tokens",
-                        "p_type":"uint256"
-                    }
-                ]
-            }
-        ];
-        // 地址
-        const addrs = [{
-            "addr":"0x349b83EA8f433c66D9107b2Ea4a9938705029534",
-            "tag":"whftest",
-            "chain_name":"Goerli",
-            "chain_id":"5",
-            "rpc":"https://ethereum-goerli.publicnode.com"
-        },{
-            "addr":"0x349b83EA8f433c66D9107b2Ea4a9938705029535",
-            "tag":"eth1",
-            "chain_name":"ETH",
-            "chain_id":"1",
-            "rpc":"https://ethereum-goerli.publicnode.com"
-        },{
-            "addr":"0x349b83EA8f433c66D9107b2Ea4a9938705029536",
-            "tag":"polygon100",
-            "chain_name":"Polygon",
-            "chain_id":"100",
-            "rpc":"https://ethereum-goerli.publicnode.com"
-        }];
-        // abi
-        const abi = "[{\"constant\":false,\"inputs\":[{\"name\":\"spender\",\"type\":\"address\"},{\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"name\":\"success\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"name\":\"success\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"from\",\"type\":\"address\"},{\"name\":\"to\",\"type\":\"address\"},{\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"name\":\"success\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"name\":\"tokenOwner\",\"type\":\"address\"},{\"indexed\":true,\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"constant\":true,\"inputs\":[],\"name\":\"_totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"tokenOwner\",\"type\":\"address\"},{\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"name\":\"remaining\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"tokenOwner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"name\":\"balance\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"a\",\"type\":\"uint256\"},{\"name\":\"b\",\"type\":\"uint256\"}],\"name\":\"safeAdd\",\"outputs\":[{\"name\":\"c\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"a\",\"type\":\"uint256\"},{\"name\":\"b\",\"type\":\"uint256\"}],\"name\":\"safeDiv\",\"outputs\":[{\"name\":\"c\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"a\",\"type\":\"uint256\"},{\"name\":\"b\",\"type\":\"uint256\"}],\"name\":\"safeMul\",\"outputs\":[{\"name\":\"c\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"a\",\"type\":\"uint256\"},{\"name\":\"b\",\"type\":\"uint256\"}],\"name\":\"safeSub\",\"outputs\":[{\"name\":\"c\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}]";
-        read_funcs.map((item, index) => {
-            Object.assign(item, { isRead: true });
-        })
-        write_funcs.map((item, index) => {
-            Object.assign(item, { isRead: false });
-        })
-        const finalArr = read_funcs.concat(write_funcs);
-        setMethodList(finalArr);
-        setAddrList(addrs);
-        setAbiJson(abi);
+        request
+            .get(getAbiInfoUrl, {
+                params
+            })
+            .then(function(response) {
+                console.log(response);
+                if (response.code === 0) {
+                    console.log(response.data);
+                    // setAbiInfoFromServe({});
+                    let read_funcs = response.data.read_funcs;
+                    let write_funcs = response.data.write_funcs;
+                    const addrs = response.data.addrs;
+                    const abi = response.data.abi;
+
+                    read_funcs.map((item: any, index: number) => {
+                        Object.assign(item, { isRead: true });
+                    })
+                    write_funcs.map((item: any, index: number) => {
+                        Object.assign(item, { isRead: false });
+                    })
+                    const finalArr = read_funcs.concat(write_funcs);
+                    setMethodList(finalArr);
+                    setAddrList(addrs);
+                    setAbiJson(abi);
+                }
+            })
+            .catch(function(error) {
+                console.log(error);
+            });
+        
     };
 
     // 中间 折叠面板-数据源
@@ -382,7 +338,7 @@ const Call: React.FC = () => {
         console.log(values);
     };
     const tryToGetNode = (e: any) => {
-        console.log('e.target', e.target, 'e.target.parentNode', e.target.parentNode);
+        // console.log('e.target', e.target, 'e.target.parentNode', e.target.parentNode);
         let strFields = e.target.getAttribute('data-fields');
         if (!strFields) {
             strFields = e.target.parentNode.getAttribute('data-fields');
@@ -403,14 +359,16 @@ const Call: React.FC = () => {
     };
     const onOneFormClick = (e: any) => {
         const strFields = tryToGetNode(e);
-        const arrFileds = strFields.split(',');
         let paramObj: any = {};
-        const allData = form.getFieldsValue();
         let prefix_index = 0;
-        arrFileds.map((item: any, index: number) => {
-            prefix_index = item.split('-')[0];
-            paramObj[item.split('-')[1]] = allData[item];
-        });
+        if (strFields) {
+            const arrFileds = strFields.split(',');
+            const allData = form.getFieldsValue();
+            arrFileds.map((item: any, index: number) => {
+                prefix_index = item.split('-')[0];
+                paramObj[item.split('-')[1]] = allData[item];
+            });
+        }
         console.log('paramObj', paramObj);
         // 发请求
         let resultObj: any = {};
@@ -536,7 +494,6 @@ const Call: React.FC = () => {
         return abi ? <ReactJson src={JSON.parse(abi)} /> : abi;
     }
 
-    
 
     return <GridContent>
         <>
@@ -604,33 +561,26 @@ const Call: React.FC = () => {
                     <Col span={5} {...topColResponsiveProps}>
                         <div className='search-condition-title'>部门：</div>
                         <Select
-                            defaultValue="NFT"
+                            defaultValue="1"
                             style={{ width: '100%' }}
                             onChange={deptHandleChange}
-                            options={[
-                                { value: 'NFT', label: 'NFT' },
-                                { value: 'DEX', label: 'DEX' },
-                                { value: 'EARN', label: 'EARN' },
-                                { value: 'ChainApplication', label: 'ChainApplication' },
-                            ]}
+                            value={currDepartmentId}
+                            options={deptProjListFromServer.deptList}
                         />
                         <div className='search-condition-title'>项目：</div>
                         <Select
-                            defaultValue="NFT1"
+                            // defaultValue="all"
                             style={{ width: '100%' }}
                             onChange={projectHandleChange}
-                            options={[
-                                { value: 'NFT1', label: 'NFT1' },
-                                { value: 'DEX1', label: 'DEX1' },
-                                { value: 'EARN1', label: 'EARN1' },
-                                { value: 'ChainApplication1', label: 'ChainApplication1' },
-                            ]}
+                            value={currProjectId}
+                            options={(deptProjListFromServer.projListbyDept as any)[currDepartmentId]?.child}
                         />
                         <div className='search-condition-title'>环境：</div>
                         <Select
                             defaultValue="prod"
                             style={{ width: '100%' }}
                             onChange={envHandleChange}
+                            value={currEnv}
                             options={[
                                 { value: 'prod', label: 'prod' },
                                 { value: 'test', label: 'test' },
@@ -645,7 +595,7 @@ const Call: React.FC = () => {
                             switcherIcon={<DownOutlined />}
                             defaultExpandedKeys={['0-0-0']}
                             onSelect={onTreeSelect}
-                            treeData={treeData}
+                            treeData={treeDataSource}
                         />
                     </Col>
                     <Col span={11} {...topColResponsiveProps}>

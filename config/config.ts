@@ -73,7 +73,7 @@ export default defineConfig({
       ],
     },
     /**
-     * */
+     * 
     {
       path: '/dashboard',
       name: 'dashboard',
@@ -288,7 +288,7 @@ export default defineConfig({
         },
       ],
     },
-     
+     */
     {
       name: 'contract',
       icon: '',
@@ -315,6 +315,12 @@ export default defineConfig({
           icon: 'smile',
           path: '/contract/address',
           component: './contract/call/address',
+        },
+        {
+          name: 'project',
+          icon: 'smile',
+          path: '/contract/project',
+          component: './contract/call/project',
         }
       ],
     },

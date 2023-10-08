@@ -1,8 +1,9 @@
 /* 定制连接钱包样式 */
 :root {
-    --account-center-position-top: 42px;
-    --account-center-position-right: 30px;
-  }
+    --account-center-position-top: -15px;
+    --account-center-position-right: 300px;
+    --account-center-z-index: 101;
+}
 
 .user-info-basic {
     display: flex;
