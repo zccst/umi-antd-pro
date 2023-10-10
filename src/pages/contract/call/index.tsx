@@ -12,7 +12,7 @@ import {
 } from './services'
 import { ethers } from 'ethers'
 import { GridContent } from '@ant-design/pro-components';
-import { Tree, Tabs, Collapse, Switch, Form, Input, Select, Button, Avatar, List, Col, Dropdown, Menu, Row, message, version } from 'antd';
+import { Tree, Tabs, Collapse, Switch, Form, Input, Select, Button, Avatar, List, Col, Dropdown, Menu, Row, message, Tag, version } from 'antd';
 const { Panel } = Collapse;
 const { TextArea, Search } = Input;
 import type { DataNode, TreeProps } from 'antd/es/tree';
@@ -50,8 +50,11 @@ const tailLayout = {
 let provider : any
 
 const Call: React.FC = () => {
-    const [{ wallet }, connect, disconnect] = useConnectWallet()
-    const connectedWallets = useWallets()
+    const [{ wallet }, connect, disconnect] = useConnectWallet(); // 钱包
+    const [{ chains, connectedChain, settingChain }, setChain] = useSetChain(); // 链
+    const [notifications, customNotification, updateNotify] = useNotifications(); // 通知
+    const connectedWallets = useWallets(); // 已连接钱包，是数组
+    const updateAccountCenter = useAccountCenter(); // 用户中心
     const [web3Onboard, setWeb3Onboard] = useState<{[key: string]: any}>({});
 
     const [form] = Form.useForm();
@@ -66,6 +69,7 @@ const Call: React.FC = () => {
 
     // treeDate
     const [treeDataSource, setTreeDataSource] = useState([]);
+    const [titleInfo, setTitleInfo] = useState({contractName: '', version: ''});
     // const [abiInfoFromServe, setAbiInfoFromServe] = useState({ abi: '', read_funcs: [], write_funcs: [], addrs: []});
     
     let [methodKey, setMethodKey] = useState(['']);
@@ -74,20 +78,15 @@ const Call: React.FC = () => {
     let [abiJson, setAbiJson] = useState('');
     let [currAddress, setCurrAddress] = useState('');
 
+    // 当前合约对象
+    let [currContract, setCurrContract] = useState({});
+
 
     useEffect(() => {
         setWeb3Onboard(initWeb3Onboard);
-        // console.log('setWeb3Onboard(initWeb3Onboard)', web3Onboard); web3Onboard为什么是空对象
-        // web3Onboard && web3Onboard.state && web3Onboard.state.actions.updateAccountCenter({
-        //     minimal: false
-        // })
-        return () => {
-            // 处理已登录的面板
-            console.log('updateAccountCenter({minimal: true})');
-            // setWeb3Onboard({})
-            // web3Onboard && web3Onboard.state && web3Onboard.state.actions.updateAccountCenter({
-            //     minimal: true
-            // })
+        updateAccountCenter({ minimal: false })
+        return () => { // 处理已登录的面板
+            updateAccountCenter({ minimal: true })
         }
     }, [])
     
@@ -166,21 +165,34 @@ const Call: React.FC = () => {
 
 
     // 顶部
+    // 在调用AtAddress验证地址合法性
     const onAtAddress= () => {
-        // 关联地址的作用？？？
         console.log("At Address", currAddress);
+        // 检查非空地址
+        if (!currAddress) {
+            message.warning('请从右侧Address中选择一个地址，或输入一个临时地址。');
+            return false;
+        }
+        // 检查地址长度
+        // TODO
+
         // 设置右侧address，如果是临时地址，则全部不再高亮。
-        const completeAddr = currAddress;
-        setCurrAddress(completeAddr);
+        setCurrAddress(currAddress);
         const newList = addrList.map((item: any) => {
-            return {...item, isActive: item.addr === completeAddr ? true : false}
+            return {...item, isActive: item.addr === currAddress ? true : false}
         });
         setAddrList(newList);
+
+        // 还原合约
+        // 合约地址，signer, provider
+        const signer = provider.getUncheckedSigner();
+        const contract = new ethers.Contract(currAddress, abiJson, signer);
+        setCurrContract(contract);
+
+        message.success("At Address地址 " + currAddress + " 成功");
     }
     const onChangeCurrAddress= (e: any) => {
-        // TODO 判断临时地址
-        console.log(e.target.value);
-        setCurrAddress(e.target.value);
+        setCurrAddress(e.target.value);// TODO 判断临时地址。此处不再验证合法性。
     }
 
     // 左侧 select查询
@@ -226,7 +238,7 @@ const Call: React.FC = () => {
                             }
                         });
                         return {
-                            title: item.name + '[' + (item.updatable ? '可升级' : '不可升级') + ']',
+                            title: item.name + ' [' + (item.updatable ? '可升级' : '不可升级') + ']',
                             key: index,
                             children: childArr
                         }
@@ -239,63 +251,29 @@ const Call: React.FC = () => {
                 console.log(error);
             });
     };
-    // 左侧 树-数据源
-    // const treeData: DataNode[] = [
-    //     {
-    //       title: 'parent 1',
-    //       key: '0-0',
-    //       children: [
-    //         {
-    //           title: 'parent 1-0',
-    //           key: '0-0-0',
-    //           children: [
-    //             {
-    //               title: 'leaf',
-    //               key: '0-0-0-0',
-    //             },
-    //             {
-    //               title: 'leaf',
-    //               key: '0-0-0-1',
-    //             },
-    //             {
-    //               title: 'leaf',
-    //               key: '0-0-0-2',
-    //             },
-    //           ],
-    //         },
-    //         {
-    //           title: 'parent 1-1',
-    //           key: '0-0-1',
-    //           children: [
-    //             {
-    //               title: 'leaf',
-    //               key: '0-0-1-0',
-    //             },
-    //           ],
-    //         },
-    //         {
-    //           title: 'parent 1-2',
-    //           key: '0-0-2',
-    //           children: [
-    //             {
-    //               title: 'leaf',
-    //               key: '0-0-2-0',
-    //             },
-    //             {
-    //               title: 'leaf',
-    //               key: '0-0-2-1',
-    //             },
-    //           ],
-    //         },
-    //       ],
-    //     },
-    // ];
+
     const onTreeSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
-        console.log('selected', selectedKeys, info);
+        console.log('selected', selectedKeys, info, treeDataSource);
         if (!selectedKeys.length) {
             message.warning('没有选中树节点，请先选择节点！');
             return false;
         }
+        const selectedContractKey = (selectedKeys[0] as any).split('-')[0];
+        const selectedVersionKey = (selectedKeys[0] as any).split('-')[1];
+        // 渲染title
+        let contractName = '';
+        let version = '';
+        treeDataSource.map((contractItem: any) => {
+            if (contractItem.key === +selectedContractKey) {
+                contractName = contractItem.title;
+                contractItem.children.map((item: any) => {
+                    if (item.key === selectedKeys[0]) {
+                        version = item.title;
+                        setTitleInfo({contractName: contractName, version: version})
+                    }
+                });
+            }
+        });
         const params = {
             id: (selectedKeys[0] as any).split('-')[1],
         }
@@ -339,52 +317,102 @@ const Call: React.FC = () => {
     };
     const tryToGetNode = (e: any) => {
         // console.log('e.target', e.target, 'e.target.parentNode', e.target.parentNode);
+        let func_name = e.target.getAttribute('data-func_name');
         let strFields = e.target.getAttribute('data-fields');
+        let idx = e.target.getAttribute('data-idx');
+        if (!func_name) {
+            func_name = e.target.parentNode.getAttribute('data-func_name');
+        }
         if (!strFields) {
             strFields = e.target.parentNode.getAttribute('data-fields');
         }
-        return strFields;
+        if (!idx) {
+            idx = e.target.parentNode.getAttribute('data-idx');
+        }
+        console.log('tryToGetNode', func_name, strFields, idx);
+        return {
+            func_name: func_name,
+            strFields: strFields,
+            idx: idx
+        };
     }
     const onOneFormReset = (e: any) => {
-        const strFields = tryToGetNode(e);
-        const arrFileds = strFields.split(',');
+        const oneFormInfo = tryToGetNode(e);
+        const arrFileds = oneFormInfo.strFields.split(',');
         let paramObj: any = {};
-        let prefix_index = 0;
         arrFileds.map((item: any, index: number) => {
-            prefix_index = item.split('-')[0];
             paramObj[item] = '';
         });
-        paramObj[prefix_index + '-result'] = '';
+        paramObj[oneFormInfo.idx + '-result'] = '';
         form.setFieldsValue(paramObj);
     };
-    const onOneFormClick = (e: any) => {
-        const strFields = tryToGetNode(e);
-        let paramObj: any = {};
-        let prefix_index = 0;
-        if (strFields) {
-            const arrFileds = strFields.split(',');
-            const allData = form.getFieldsValue();
+    // 中间 发交易
+    const readyToTransact = async () => {
+        if (!wallet) {
+          const walletSelected = await connect()
+          if (!walletSelected) return false
+        }
+        // prompt user to switch to Goerli for test
+        await setChain({ chainId: connectedChain?.id || '0x5' })
+    
+        return true
+    }
+    const onOneFormClick = async(e: any) => {
+        // 检查非空地址
+        if (!currAddress) {
+            message.warning('请先输入关联地址，再来执行读写方法。');
+            return false;
+        }
+        // 检查合约实例化
+        if (!Object.keys(currContract)) {
+            message.warning('请先点击“关联地址”按钮，再来执行读写方法。');
+            return false;
+        }
+        // 检查钱包连接情况
+        if (!wallet) {
+            const walletSelected = await connect()
+            if (!walletSelected) {
+                message.warning("请先连接钱包，再调用。");
+                return false
+            }
+        }
+
+        const oneFormInfo = tryToGetNode(e);
+        const allData = form.getFieldsValue();
+        let paramsValue: any = [];
+        if (oneFormInfo.strFields) {
+            const arrFileds = oneFormInfo.strFields.split(',');
             arrFileds.map((item: any, index: number) => {
-                prefix_index = item.split('-')[0];
-                paramObj[item.split('-')[1]] = allData[item];
+                paramsValue.push(allData[item]);
             });
         }
-        console.log('paramObj', paramObj);
+        // console.log('paramObj', paramsValue, currContract);
         // 发请求
+        console.log('before call contract:', allData, oneFormInfo, paramsValue);
+        let resultString;
+        try {
+            const res = await (currContract as any)[oneFormInfo.func_name](...paramsValue);
+            resultString = res.toString()
+            console.log('success call', res, resultString);
+        } catch (Error) {
+            resultString = Error;
+            console.log('exception call', Error);
+        }
+        
+        
         let resultObj: any = {};
-        resultObj[prefix_index + '-result'] = JSON.stringify(paramObj);
+        resultObj[oneFormInfo.idx + '-result'] = resultString;
         form.setFieldsValue(resultObj);
     };
-    const renderForm = (inputArr: [], idx: number) => {
-        console.log('inputArr', inputArr);
+    const renderForm = (func_name: string, inputArr: [], idx: number) => {
+        // console.log('inputArr', inputArr);
         const resetBtnClass = inputArr.length > 0 ? 'reset-btn-visible' : 'reset-btn-hidden';
-        const fieldArr: string[] = [];
+        const fieldNameArr: string[] = [];
         return <>
             {
                 inputArr.map((item: any, index) => {
-                    const fieldName = idx + '-' + item.p_name;
-                    fieldArr.push(fieldName);
-                    return <Form.Item name={fieldName} label={item.p_name} key={idx + '-' + item.p_name + index} rules={[{ required: true }]} className='form-position-input'>
+                    fieldNameArr.push(idx + '-' + item.p_name); // fieldName与Form.Item的name保持一致，且必须带索引编号idx
+                    return <Form.Item name={idx + '-' + item.p_name} label={item.p_name} key={idx + '-' + item.p_name + index} rules={[{ required: true }]} className='form-position-input'>
                         {item.p_type.indexOf('[') >= 0 ?
                         <TextArea placeholder={item.p_type} allowClear autoSize />
                         :
@@ -394,8 +422,13 @@ const Call: React.FC = () => {
                 })
             }
             <Form.Item {...tailLayout}>
-                <Button data-fields={fieldArr.join(',')} className={resetBtnClass} onClick={onOneFormReset}>重置</Button>&nbsp;&nbsp;
-                <Button data-fields={fieldArr.join(',')} type="primary" onClick={onOneFormClick}>执行</Button>
+                <Button data-fields={fieldNameArr.join(',')} className={resetBtnClass} onClick={onOneFormReset}>重置</Button>&nbsp;&nbsp;
+                <Button
+                    data-func_name={func_name} 
+                    data-fields={fieldNameArr.join(',')} 
+                    data-idx={idx} 
+                    type="primary" onClick={onOneFormClick}
+                >执行</Button>
             </Form.Item>
             <Form.Item label="输出结果：" name={`${idx}-result`}>
                 <TextArea className='form-position-result' autoSize />
@@ -407,7 +440,7 @@ const Call: React.FC = () => {
         return (
             item.func_name ?
             <Panel header={`${item.func_name}`} key={index} className={`func-${color}-color`} extra={genExtra(item.isRead)}>
-                {renderForm(item.inputs, index)}
+                {renderForm(item.func_name, item.inputs, index)}
             </Panel>
             :
             <div key={index}></div>
@@ -495,12 +528,20 @@ const Call: React.FC = () => {
     }
 
 
+    let titleProject = '';
+    (deptProjListFromServer.projListbyDept as any)[currDepartmentId]?.child.map((item: any) => {
+        if (item.value === currDepartmentId) {
+            titleProject = item.label;
+        }
+    });
+    
+
     return <GridContent>
         <>
             {Object.keys(web3Onboard).length ? <section >
                 <div className='user-info-basic'>
                     <div className='header-align-left'>
-                        当前ABI： 项目1 - prod - 合约名称1-abi - v1.1[latest]
+                        当前ABI： {titleProject} - {currEnv} - {titleInfo.contractName} - {titleInfo.version}
                     </div>
                     <div className='header-align-right'>
                         {wallet && (<Button
@@ -516,7 +557,7 @@ const Call: React.FC = () => {
                     </div>
                 </div>
                 <div className='user-info-container'>
-                    <div>合约部署地址： 0x430ee6d7e39b7200f6ed410f2e66c1127924d786</div>
+                    <div>合约部署地址： {currAddress}</div>
                     <div>
                         {!wallet && (
                         <Button
