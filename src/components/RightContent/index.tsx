@@ -24,6 +24,7 @@ const GlobalHeaderRight: React.FC = () => {
 
   return (
     <Space className={className}>
+      {/**
       <HeaderSearch
         className={`${styles.action} ${styles.search}`}
         placeholder="站内搜索"
@@ -57,9 +58,9 @@ const GlobalHeaderRight: React.FC = () => {
       >
         <QuestionCircleOutlined />
       </span>
-      <NoticeIconView />
+      <NoticeIconView /> */}
       <Avatar menu />
-      <SelectLang className={styles.action} />
+      {/* <SelectLang className={styles.action} /> */}
     </Space>
   );
 };

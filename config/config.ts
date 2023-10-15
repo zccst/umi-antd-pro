@@ -17,7 +17,8 @@ export default defineConfig({
   dva: {
     // hmr: true,
   },
-  srcTranspiler: 'esbuild',
+  srcTranspiler: 'esbuild', // dev时
+  // jsMinifier: 'terser', // build时
   layout: {
     // https://umijs.org/zh-CN/plugins/plugin-layout
     locale: true,
@@ -265,6 +266,7 @@ export default defineConfig({
         },
       ],
     },
+     */
     {
       name: 'account',
       icon: 'user',
@@ -272,9 +274,10 @@ export default defineConfig({
       routes: [
         {
           path: '/account',
-          redirect: '/account/center',
+          // redirect: '/account/center',
+          redirect: '/account/password',
         },
-        {
+        /*{
           name: 'center',
           icon: 'smile',
           path: '/account/center',
@@ -285,10 +288,15 @@ export default defineConfig({
           icon: 'smile',
           path: '/account/settings',
           component: './account/settings',
+        },*/
+        {
+          name: 'password',
+          icon: 'smile',
+          path: '/account/password',
+          component: './account/password',
         },
       ],
     },
-     */
     {
       name: 'contract',
       icon: '',

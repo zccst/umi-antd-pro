@@ -4,9 +4,13 @@
 declare namespace API {
   type CurrentUser = {
     name?: string;
+    username?: string; // new
+    id: number; // new
+    state: number; // new
+    depts: array; // new
+    email?: string;
     avatar?: string;
     userid?: string;
-    email?: string;
     signature?: string;
     title?: string;
     group?: string;
@@ -66,6 +70,11 @@ declare namespace API {
     password?: string;
     autoLogin?: boolean;
     type?: string;
+  };
+
+  type ChangepwdParams = {
+    old_password?: string;
+    new_password?: string;
   };
 
   type ErrorResponse = {

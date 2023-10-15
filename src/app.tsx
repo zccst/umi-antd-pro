@@ -25,6 +25,7 @@ export async function getInitialState(): Promise<{
   loading?: boolean;
   fetchUserInfo?: () => Promise<API.CurrentUser | undefined>;
 }> {
+  // 此处仅定义函数，未执行
   const fetchUserInfo = async () => {
     try {
       const msg = await queryCurrentUser();
@@ -36,7 +37,8 @@ export async function getInitialState(): Promise<{
   };
   // 如果是登录页面，不执行
   if (history.location.pathname !== loginPath) {
-    const currentUser = await fetchUserInfo();
+    const currentUser = await fetchUserInfo(); // 不是登录页才执行调用
+    console.log('getInitialState 除登录页之外的所有页面 currentUser:', currentUser);
     return {
       fetchUserInfo,
       currentUser,
@@ -68,18 +70,19 @@ export const layout: RunTimeLayoutConfig = ({
       //   history.push(loginPath);
       // }
     },
-    links: isDev
-      ? [
-          <Link to="/umi/plugin/openapi" target="_blank">
-            <LinkOutlined />
-            <span>OpenAPI 文档</span>
-          </Link>,
-          <Link to="/~docs">
-            <BookOutlined />
-            <span>业务组件文档</span>
-          </Link>,
-        ]
-      : [],
+    links: [],
+    // isDev
+    //   ? [
+    //       <Link to="/umi/plugin/openapi" target="_blank">
+    //         <LinkOutlined />
+    //         <span>OpenAPI 文档</span>
+    //       </Link>,
+    //       <Link to="/~docs">
+    //         <BookOutlined />
+    //         <span>业务组件文档</span>
+    //       </Link>,
+    //     ]
+    //   : [],
     menuHeaderRender: undefined,
     // 自定义 403 页面
     // unAccessible: <div>unAccessible</div>,

@@ -1,7 +1,7 @@
 /* 定制连接钱包样式 */
 :root {
     --account-center-position-top: -15px;
-    --account-center-position-right: 300px;
+    --account-center-position-right: 149px;
     --account-center-z-index: 101;
 }
 

@@ -20,7 +20,7 @@ import { DownOutlined, SearchOutlined, ReadOutlined, EditOutlined, CheckOutlined
 import { Suspense, useState, useEffect } from 'react';
 import ReactJson from 'react-json-view'
 
-import request from 'umi-request';
+import request from '../../../utils/req';
 
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
@@ -530,7 +530,9 @@ const Call: React.FC = () => {
 
     let titleProject = '';
     (deptProjListFromServer.projListbyDept as any)[currDepartmentId]?.child.map((item: any) => {
-        if (item.value === currDepartmentId) {
+        if (currProjectId === '') {
+            // 刚打开时的默认值，什么也不做
+        } else if (item.value === currDepartmentId) {
             titleProject = item.label;
         }
     });

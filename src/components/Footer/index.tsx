@@ -17,9 +17,9 @@ const Footer: React.FC = () => {
       copyright={`${currentYear} ${defaultMessage}`}
       links={[
         {
-          key: 'Ant Design Pro',
+          key: 'OKX Web3 DevOps',
           title: 'Web3 DevOps',
-          href: 'https://pro.ant.design',
+          href: 'https://www.okx.com/',
           blankTarget: true,
         },
         {

@@ -6,15 +6,19 @@ import { request } from 'umi';
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
     data: API.CurrentUser;
-  }>('/api/currentUser', {
+  }>('/api/v1/users/info', {
     method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'token': window.localStorage.getItem('token') || ''
+    },
     ...(options || {}),
   });
 }
 
 /** 退出登录接口 POST /api/login/outLogin */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>('/api/login/outLogin', {
+  return request<Record<string, any>>('/api/v1/outLogin', {
     method: 'POST',
     ...(options || {}),
   });
@@ -25,10 +29,26 @@ export async function login(
   body: API.LoginParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>('/api/login/account', {
+  return request<API.LoginResult>('/api/v1/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 重置密码接口 POST /api/v1/users/changepassword */
+export async function changePassword(
+  body: API.ChangepwdParams,
+  options?: { [key: string]: any },
+) {
+  return request<API.LoginResult>('/api/v1/users/changepassword', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'token': window.localStorage.getItem('token') || ''
     },
     data: body,
     ...(options || {}),

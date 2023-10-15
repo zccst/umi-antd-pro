@@ -54,8 +54,12 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
-      const msg = await login({ ...values, type });
-      if (msg.status === 'ok') {
+      console.log('登录请求前', values);
+      const response = await login({ ...values, type });
+      console.log('登录请求后', response);
+      if (response.code === 0) {
+        window.localStorage.setItem('token', response.data.token);
+
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
           defaultMessage: '登录成功！',
@@ -69,9 +73,8 @@ const Login: React.FC = () => {
         history.push(redirect || '/');
         return;
       }
-      console.log(msg);
       // 如果失败去设置用户错误信息
-      setUserLoginState(msg);
+      setUserLoginState(response);
     } catch (error) {
       const defaultLoginFailureMessage = intl.formatMessage({
         id: 'pages.login.failure',
@@ -98,11 +101,11 @@ const Login: React.FC = () => {
             autoLogin: true,
           }}
           actions={[
-            <FormattedMessage
-              key="loginWith"
-              id="pages.login.loginWith"
-              defaultMessage="其他登录方式"
-            />,
+            // <FormattedMessage
+            //   key="loginWith"
+            //   id="pages.login.loginWith"
+            //   defaultMessage="其他登录方式"
+            // />,
             // <AlipayCircleOutlined
             //   key="AlipayCircleOutlined"
             //   className={styles.icon}
@@ -111,10 +114,10 @@ const Login: React.FC = () => {
             //   key="TaobaoCircleOutlined"
             //   className={styles.icon}
             // />,
-            <WeiboCircleOutlined
-              key="WeiboCircleOutlined"
-              className={styles.icon}
-            />,
+            // <WeiboCircleOutlined
+            //   key="WeiboCircleOutlined"
+            //   className={styles.icon}
+            // />,
           ]}
           onFinish={async (values) => {
             await handleSubmit(values as API.LoginParams);
@@ -128,13 +131,13 @@ const Login: React.FC = () => {
                 defaultMessage: '账户密码登录',
               })}
             />
-            <Tabs.TabPane
+            {/* <Tabs.TabPane
               key="mobile"
               tab={intl.formatMessage({
                 id: 'pages.login.phoneLogin.tab',
                 defaultMessage: '手机号登录',
               })}
-            />
+            /> */}
           </Tabs>
 
           {status === 'error' && loginType === 'account' && (

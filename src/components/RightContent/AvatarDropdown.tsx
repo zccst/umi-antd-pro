@@ -40,7 +40,9 @@ const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
   const onMenuClick = useCallback(
     (event: MenuInfo) => {
       const { key } = event;
-      if (key === 'logout') {
+      if (key === 'logout') { // 退出登录
+        window.localStorage.setItem('token', ''); // 清除token
+
         setInitialState((s) => ({ ...s, currentUser: undefined }));
         loginOut();
         return;
@@ -74,7 +76,7 @@ const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
 
   const menuHeaderDropdown = (
     <Menu className={styles.menu} selectedKeys={[]} onClick={onMenuClick}>
-      {menu && (
+      {/* {menu && (
         <Menu.Item key="center">
           <UserOutlined />
           个人中心
@@ -84,6 +86,12 @@ const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
         <Menu.Item key="settings">
           <SettingOutlined />
           个人设置
+        </Menu.Item>
+      )} */}
+      {menu && (
+        <Menu.Item key="password">
+          <SettingOutlined />
+          重置密码
         </Menu.Item>
       )}
       {menu && <Menu.Divider />}

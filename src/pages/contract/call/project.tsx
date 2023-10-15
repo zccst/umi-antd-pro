@@ -4,7 +4,7 @@ import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, 
 import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
-import request from 'umi-request';
+import request from '../../../utils/req';
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
 import { projUrlPrefix, deptProjUrl } from '../../../utils/constant'
