@@ -54,7 +54,6 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginParams) => {
     try {
       // 登录
-      console.log('登录请求前', values);
       const response = await login({ ...values, type });
       console.log('登录请求后', response);
       if (response.code === 0) {
@@ -286,12 +285,12 @@ const Login: React.FC = () => {
               marginBottom: 24,
             }}
           >
-            <ProFormCheckbox noStyle name="autoLogin">
+            {/* <ProFormCheckbox noStyle name="autoLogin">
               <FormattedMessage
                 id="pages.login.rememberMe"
                 defaultMessage="自动登录"
               />
-            </ProFormCheckbox>
+            </ProFormCheckbox> */}
             <a
               style={{
                 float: 'right',
@@ -299,7 +298,7 @@ const Login: React.FC = () => {
             >
               <FormattedMessage
                 id="pages.login.forgotPassword"
-                defaultMessage="忘记密码"
+                defaultMessage="忘记密码？请联系管理员重置"
               />
             </a>
           </div>

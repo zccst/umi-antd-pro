@@ -4,12 +4,6 @@
 // const rootURL = `${location.protocol}//${location.hostname}:${location.port}/api/v1`;
 const rootURL = "http://44.238.134.212:8020/api/v1";
 
-// 登录相关
-export const loginUrl = rootURL + "/login";
-export const userInfoUrl = rootURL + "/users/info";
-export const passwordUrl = rootURL + "/users/info";
-
-
 // 部门和项目列表
 export const deptProjUrl = rootURL + "/project/list";
 

@@ -3,6 +3,7 @@ import RightContent from '@/components/RightContent';
 import { BookOutlined, LinkOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
+// import { PageLoading } from '@ant-design/pro-layout';没有安装这个插件
 import type { RunTimeLayoutConfig } from 'umi';
 import { history, Link } from 'umi';
 import { currentUser as queryCurrentUser } from './services/ant-design-pro/api';
@@ -10,7 +11,8 @@ import { currentUser as queryCurrentUser } from './services/ant-design-pro/api';
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
-// TODO: 不知道这是啥？
+// initialStateConfig 是 getInitialState 的补充配置，
+// getInitialState 支持异步的设置，在初始化没有完成之前我们展示了一个 loading，initialStateConfig 可以配置这个 loading。
 /** 获取用户信息比较慢的时候会展示一个 loading */
 // export const initialStateConfig = {
 //   loading: <PageLoading />,

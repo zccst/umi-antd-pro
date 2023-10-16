@@ -12,8 +12,6 @@ import { Link, useRequest, useModel } from 'umi';
 import styles from './password.less';
 import type { CurrentUser, tabKeyType, TagType } from '../center/data';
 import { queryCurrent } from '../center/service';
-// import request from 'umi-request';
-// import { passwordUrl } from '../../../utils/constant'
 
 import { changePassword } from '@/services/ant-design-pro/api';
 
@@ -40,7 +38,6 @@ const Center: React.FC<RouteChildrenProps> = () => {
     console.log('Failed:', errorInfo);
   };
 
-  // console.log('initialState render', initialState.currentUser);
   // loading={loading}
 
   return (

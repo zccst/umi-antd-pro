@@ -1,6 +1,6 @@
 export default {
   'pages.layouts.userLayout.title':
-    'Web3 DevOps 是海淀区最具影响力的 Web 设计规范',
+    'Web3 DevOps 是一站式智能合约运维平台',
   'pages.login.accountLogin.tab': '账户密码登录',
   'pages.login.accountLogin.errorMessage':
     '错误的用户名和密码(admin/ant.design)',
@@ -20,7 +20,7 @@ export default {
   'pages.login.phoneLogin.getVerificationCode': '获取验证码',
   'pages.getCaptchaSecondText': '秒后重新获取',
   'pages.login.rememberMe': '自动登录',
-  'pages.login.forgotPassword': '忘记密码 ?',
+  'pages.login.forgotPassword': '忘记密码?请联系管理员重置',
   'pages.login.submit': '登录',
   'pages.login.loginWith': '其他登录方式 :',
   'pages.login.registerAccount': '注册账户',

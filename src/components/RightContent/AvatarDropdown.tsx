@@ -41,8 +41,10 @@ const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
     (event: MenuInfo) => {
       const { key } = event;
       if (key === 'logout') { // 退出登录
-        window.localStorage.setItem('token', ''); // 清除token
+        // 清除token
+        window.localStorage.setItem('token', '');
 
+        // 清除initialState中的用户信息
         setInitialState((s) => ({ ...s, currentUser: undefined }));
         loginOut();
         return;
