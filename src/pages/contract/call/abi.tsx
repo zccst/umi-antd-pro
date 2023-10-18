@@ -1,7 +1,7 @@
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
 import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, message, Tag } from 'antd';
-import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
 import request from '../../../utils/req';
@@ -50,8 +50,8 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 }) => {
   const [form] = Form.useForm();
   
-  const [currFormDeptId, setCurrFormDeptId] = useState(extraObj.item.department_id); 
-  const [currFormProjId, setCurrFormProjId] = useState(extraObj.item.project_id); 
+  const [currFormDeptId, setCurrFormDeptId] = useState(extraObj.item.department_id); // number
+  const [currFormProjId, setCurrFormProjId] = useState(extraObj.item.project_id); // number
 
   const onFormDepartmentSelect = (selected: any) => {
     const options = extraObj.optionList[selected]['child'].filter((item: any) => item.value != 'all')
@@ -104,12 +104,19 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
     department_id: '' + extraObj.item.department_id,
     project_id: '' + extraObj.item.project_id,
   }
-  // console.log('defaultV', extraObj.type, defaultV);
+
+  const projectKey = +defaultV['department_id'] === +currFormDeptId ? +defaultV['department_id'] : +currFormDeptId;
+  const projectOptions = extraObj.optionList[projectKey] 
+    ? extraObj.optionList[projectKey].child.filter((item: any) => item.value !== 'all') : []
+  console.log('defaultV', extraObj.type, defaultV, projectOptions);
+  console.log(+defaultV['department_id'], currFormDeptId, projectKey);
   
   setTimeout(() => {
     // 本地编辑状态下，改变state不重置表单。直到弹窗消失（提交或取消）
     if (!isLocalEdit) {
       form.setFieldsValue(defaultV);
+
+      setCurrFormDeptId(defaultV['department_id']); // 设置dept, proj的时候不动
     }
   }, 10);
 
@@ -205,9 +212,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
             disabled={(extraObj.type === 'upgrade') ? true : false}
             defaultValue={extraObj.item.project_id}
             value={currFormProjId}
-            options={extraObj.optionList[currFormDeptId] 
-              ? extraObj.optionList[currFormDeptId]['child'].filter((item: any) => item.value != 'all') 
-              : []}
+            options={projectOptions}
             onSelect={onFormProjectSelect}
           >
           </Select>
@@ -227,7 +232,8 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
                     >
                       <Select 
                         style={{ width: 140 }} 
-                        defaultValue={CHAIN_LIST[0].value}
+                        placeholder="请选择网络" 
+                        defaultValue=""
                         options={CHAIN_LIST}
                       >
                       </Select>
@@ -492,7 +498,7 @@ const Abi: React.FC = () => {
             return '[' + item.chain_name + '] ' +  item.addr + ' (' + item.tag + ')';
           });
           // console.log('record.addrs', record.addrs);
-          return record.addrs.length ? <Tooltip placement="bottom" title={addrArr.join('\n')} overlayStyle={{ maxWidth: 600 }}>
+          return record.addrs.length ? <Tooltip placement="bottom" title={addrArr.join(' \r\n ')} overlayStyle={{ maxWidth: 600, whiteSpace: 'pre-wrap' }}>
             <a>{record.addrs.length} <QuestionCircleOutlined /></a>
           </Tooltip> : '0';
         }
@@ -609,6 +615,7 @@ const Abi: React.FC = () => {
               endTime: value[1],
             };
           },
+          
         },
       },
       {
@@ -716,6 +723,21 @@ const Abi: React.FC = () => {
                   labelWidth: 'auto', // 标签的宽度 'number' | 'auto'
                   // collapsed: false, // 默认展开状态并去掉"收起"选项
                   // collapseRender:() => null
+                  optionRender: ({ searchText }, { form }) => {
+                    // console.log(searchConfig, formProps, dom)
+                    return [
+                      <Button
+                        key="search"
+                        type="primary"
+                        icon={<SearchOutlined />}
+                        onClick={() => {
+                          form?.submit();
+                        }}
+                      >
+                        {searchText}
+                      </Button>,
+                    ];
+                  },
               }}
               options={{ // table 工具栏，设为 false 时不显示.传入 function 会点击时触发
                   setting: {
@@ -744,7 +766,7 @@ const Abi: React.FC = () => {
                   },
               }}
               dateFormatter="string"
-              headerTitle="高级表格"
+              headerTitle="abi列表"
               toolBarRender={() => [
                   <Button
                       key="button"

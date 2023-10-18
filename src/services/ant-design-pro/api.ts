@@ -1,12 +1,13 @@
 // @ts-ignore
 /* eslint-disable */
 import { request } from 'umi';
+const hostURL = "http://44.238.134.212:8020";
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
     data: API.CurrentUser;
-  }>('/api/v1/users/info', {
+  }>(hostURL + '/api/v1/users/info', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -18,7 +19,7 @@ export async function currentUser(options?: { [key: string]: any }) {
 
 /** 退出登录接口 POST /api/login/outLogin */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>('/api/v1/outLogin', {
+  return request<Record<string, any>>(hostURL + '/api/v1/outLogin', {
     method: 'POST',
     ...(options || {}),
   });
@@ -29,7 +30,7 @@ export async function login(
   body: API.LoginParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>('/api/v1/login', {
+  return request<API.LoginResult>(hostURL + '/api/v1/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -44,7 +45,7 @@ export async function changePassword(
   body: API.ChangepwdParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>('/api/v1/users/changepassword', {
+  return request<API.LoginResult>(hostURL + '/api/v1/users/changepassword', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

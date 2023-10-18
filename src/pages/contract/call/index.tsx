@@ -12,7 +12,7 @@ import {
 } from './services'
 import { ethers } from 'ethers'
 import { GridContent } from '@ant-design/pro-components';
-import { Tree, Tabs, Collapse, Switch, Form, Input, Select, Button, Avatar, List, Col, Dropdown, Menu, Row, message, Tag, version } from 'antd';
+import { Tree, Tabs, Collapse, Switch, Form, Input, Select, Button, Avatar, List, Col, Dropdown, Menu, Row, message, Alert, Tag, version } from 'antd';
 const { Panel } = Collapse;
 const { TextArea, Search } = Input;
 import type { DataNode, TreeProps } from 'antd/es/tree';
@@ -66,6 +66,7 @@ const Call: React.FC = () => {
     const [currDepartmentId, setCurrDepartmentId] = useState('2'); // 默认NFT
     const [currProjectId, setCurrProjectId] = useState('');
     const [currEnv, setCurrEnv] = useState('prod');
+    const [loading, setLoading] = useState(false);
 
     // treeDate
     const [treeDataSource, setTreeDataSource] = useState([]);
@@ -195,19 +196,20 @@ const Call: React.FC = () => {
         setCurrAddress(e.target.value);// TODO 判断临时地址。此处不再验证合法性。
     }
 
+    const onAlertClose = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+        console.log(e, 'I was closed.');
+    };
+
     // 左侧 select查询
     const deptHandleChange = (value: string) => {
-        console.log(`selected ${value}`);
         setCurrDepartmentId(value);
         const projectArr = (deptProjListFromServer.projListbyDept as any)[value]?.child;
         projectArr.length ? setCurrProjectId(projectArr[0].value) : ''; //第0个元素
     };
     const projectHandleChange = (value: string) => {
-        console.log(`selected ${value}`);
         setCurrProjectId(value);
     };
     const envHandleChange = (value: string) => {
-        console.log(`selected ${value}`);
         setCurrEnv(value);
     };
     const onSearch = () => {
@@ -222,12 +224,14 @@ const Call: React.FC = () => {
             env: currEnv
         }
         console.log(`search`, params);
+        setLoading(true);
         request
             .get(getProjListUrl, {
                 params
             })
             .then(function(response) {
-                console.log(response);
+                // console.log(response);
+                setLoading(false);
                 if (response.code === 0) {
                     const data = response.data;
                     const treeDataRoot = data.abis.map((item: any, index: number) => {
@@ -245,6 +249,8 @@ const Call: React.FC = () => {
                     });
 
                     setTreeDataSource(treeDataRoot)
+                } else {
+                    message.error('查询失败，原因：' + response.msg);
                 }
             })
             .catch(function(error) {
@@ -253,11 +259,18 @@ const Call: React.FC = () => {
     };
 
     const onTreeSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
-        console.log('selected', selectedKeys, info, treeDataSource);
-        if (!selectedKeys.length) {
-            message.warning('没有选中树节点，请先选择节点！');
+        // console.log('selected', selectedKeys, info, treeDataSource);
+        console.log('选中的树节点', selectedKeys);
+        if (typeof selectedKeys[0] === 'number') {
+            message.warning('请展开树节点，选择叶子节点对应的具体版本！');
             return false;
         }
+
+        if (!selectedKeys.length) {
+            message.warning('没有选中树节点，请先选择一个节点！');
+            return false;
+        }
+        
         const selectedContractKey = (selectedKeys[0] as any).split('-')[0];
         const selectedVersionKey = (selectedKeys[0] as any).split('-')[1];
         // 渲染title
@@ -275,7 +288,7 @@ const Call: React.FC = () => {
             }
         });
         const params = {
-            id: (selectedKeys[0] as any).split('-')[1],
+            id: selectedVersionKey,
         }
         console.log(`abi/info`, params);
         // 发送请求
@@ -284,9 +297,8 @@ const Call: React.FC = () => {
                 params
             })
             .then(function(response) {
-                console.log(response);
+                // console.log(response);
                 if (response.code === 0) {
-                    console.log(response.data);
                     // setAbiInfoFromServe({});
                     let read_funcs = response.data.read_funcs;
                     let write_funcs = response.data.write_funcs;
@@ -303,9 +315,12 @@ const Call: React.FC = () => {
                     setMethodList(finalArr);
                     setAddrList(addrs);
                     setAbiJson(abi);
+                } else {
+                    message.error('查询合约详情失败，原因：' + response.msg);
                 }
             })
             .catch(function(error) {
+                message.error('请求异常，原因：' + error.toString());
                 console.log(error);
             });
         
@@ -320,6 +335,7 @@ const Call: React.FC = () => {
         let func_name = e.target.getAttribute('data-func_name');
         let strFields = e.target.getAttribute('data-fields');
         let idx = e.target.getAttribute('data-idx');
+        let is_write = e.target.getAttribute('data-is_write');
         if (!func_name) {
             func_name = e.target.parentNode.getAttribute('data-func_name');
         }
@@ -329,11 +345,15 @@ const Call: React.FC = () => {
         if (!idx) {
             idx = e.target.parentNode.getAttribute('data-idx');
         }
+        if (!is_write) {
+            is_write = e.target.parentNode.getAttribute('data-is_write');
+        }
         console.log('tryToGetNode', func_name, strFields, idx);
         return {
             func_name: func_name,
             strFields: strFields,
-            idx: idx
+            idx: idx,
+            is_write: is_write,
         };
     }
     const onOneFormReset = (e: any) => {
@@ -358,16 +378,6 @@ const Call: React.FC = () => {
         return true
     }
     const onOneFormClick = async(e: any) => {
-        // 检查非空地址
-        if (!currAddress) {
-            message.warning('请先输入关联地址，再来执行读写方法。');
-            return false;
-        }
-        // 检查合约实例化
-        if (!Object.keys(currContract)) {
-            message.warning('请先点击“关联地址”按钮，再来执行读写方法。');
-            return false;
-        }
         // 检查钱包连接情况
         if (!wallet) {
             const walletSelected = await connect()
@@ -376,6 +386,18 @@ const Call: React.FC = () => {
                 return false
             }
         }
+
+        // 检查非空地址
+        if (!currAddress) {
+            message.warning('请先从右侧Address中点击选中一个地址，再点击右上角‘At Address’蓝色按钮关联合约地址，成功后再来执行读写方法。');
+            return false;
+        }
+        // 检查合约实例化 TODO
+        if (Object.keys(currContract).length === 0) {
+            message.warning('请先点击右上角“At Address”蓝色按钮关联合约地址，成功后再来执行读写方法。');
+            return false;
+        }
+        
 
         const oneFormInfo = tryToGetNode(e);
         const allData = form.getFieldsValue();
@@ -386,13 +408,15 @@ const Call: React.FC = () => {
                 paramsValue.push(allData[item]);
             });
         }
-        // console.log('paramObj', paramsValue, currContract);
         // 发请求
-        console.log('before call contract:', allData, oneFormInfo, paramsValue);
+        console.log('before call contract:', oneFormInfo, paramsValue, currContract, allData);
         let resultString;
         try {
             const res = await (currContract as any)[oneFormInfo.func_name](...paramsValue);
             resultString = res.toString()
+            if (oneFormInfo.is_write === '1') {
+                resultString = JSON.stringify(res);
+            }
             console.log('success call', res, resultString);
         } catch (Error) {
             resultString = Error;
@@ -404,7 +428,7 @@ const Call: React.FC = () => {
         resultObj[oneFormInfo.idx + '-result'] = resultString;
         form.setFieldsValue(resultObj);
     };
-    const renderForm = (func_name: string, inputArr: [], idx: number) => {
+    const renderForm = (func_name: string, inputArr: [], idx: number, isRead: boolean) => {
         // console.log('inputArr', inputArr);
         const resetBtnClass = inputArr.length > 0 ? 'reset-btn-visible' : 'reset-btn-hidden';
         const fieldNameArr: string[] = [];
@@ -427,6 +451,7 @@ const Call: React.FC = () => {
                     data-func_name={func_name} 
                     data-fields={fieldNameArr.join(',')} 
                     data-idx={idx} 
+                    data-is_write={isRead ? 0 : 1}
                     type="primary" onClick={onOneFormClick}
                 >执行</Button>
             </Form.Item>
@@ -440,7 +465,7 @@ const Call: React.FC = () => {
         return (
             item.func_name ?
             <Panel header={`${item.func_name}`} key={index} className={`func-${color}-color`} extra={genExtra(item.isRead)}>
-                {renderForm(item.func_name, item.inputs, index)}
+                {renderForm(item.func_name, item.inputs, index, item.isRead)}
             </Panel>
             :
             <div key={index}></div>
@@ -588,6 +613,15 @@ const Call: React.FC = () => {
                         )}
                     </div>
                 </div>
+                <Alert
+                    message="合约调用流程6步骤："
+                    description="1.点击右上角‘连接钱包’按钮，并切换至目标网络 -> 2.在左侧，根据部门、项目和环境查询合约 -> 3. 点击树结构，选择目标合约和版本，渲染出中间的读写方法和右侧关联地址列表 -> 
+                    4.点击右侧Address地址列表，选中一个地址（图钉📌会高亮） -> 5.点击‘At Address’按钮，完成地址关联 -> 6.开始使用中间的合约读写方法。"
+                    type="info"
+                    closable
+                    showIcon
+                    onClose={onAlertClose}
+                    />
             </section>
             :
             <div>Loading...</div>
@@ -630,7 +664,7 @@ const Call: React.FC = () => {
                             ]}
                         />
                         <div className='search-condition-title'>
-                            <Button type="primary" icon={<SearchOutlined />} onClick={onSearch}>查询</Button>
+                            <Button type="primary" icon={<SearchOutlined />} loading={loading} onClick={onSearch}>查询</Button>
                         </div>
                         
                         <Tree

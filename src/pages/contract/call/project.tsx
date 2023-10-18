@@ -1,7 +1,7 @@
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
 import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, message, Tag } from 'antd';
-import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
 import request from '../../../utils/req';
@@ -160,7 +160,7 @@ const Address: React.FC = () => {
 
 
     const onCreate = (type: any, values: any) => {
-      console.log('Received values of form: ', values);
+      // console.log('Received values of form: ', values);
       const urlObj: any = {
         'new': '/create',
         'edit': '/update',
@@ -174,7 +174,7 @@ const Address: React.FC = () => {
         project_name: values['project_name'],
       }
       const param = (type === 'new') ? newParam : editParam;
-      console.log(param);
+      console.log(param, values);
       // return;
       setConfirmLoading(true);
       request.post(`${projUrlPrefix}${urlObj[type]}`, {
@@ -251,7 +251,7 @@ const Address: React.FC = () => {
         dataIndex: 'project_name',
         copyable: true,
         ellipsis: true,
-        tip: '名称过长会自动收缩',
+        // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
         formItemProps: {
           rules: [
@@ -386,6 +386,21 @@ const Address: React.FC = () => {
                   labelWidth: 'auto', // 标签的宽度 'number' | 'auto'
                   // collapsed: false, // 默认展开状态并去掉"收起"选项
                   // collapseRender:() => null
+                  optionRender: ({ searchText }, { form }) => {
+                    // console.log(searchConfig, formProps, dom)
+                    return [
+                      <Button
+                        key="search"
+                        type="primary"
+                        icon={<SearchOutlined />}
+                        onClick={() => {
+                          form?.submit();
+                        }}
+                      >
+                        {searchText}
+                      </Button>,
+                    ];
+                  },
               }}
               options={{ // table 工具栏，设为 false 时不显示.传入 function 会点击时触发
                   setting: {
@@ -395,7 +410,7 @@ const Address: React.FC = () => {
               form={{
                   // 由于配置了 transform，提交的参与与定义的不同这里需要转化一下
                   syncToUrl: (values, type) => {
-                      console.log('form', values, type);
+                      // console.log('form', values, type);
                       if (type === 'get') {
                           console.log('form + get', values, type);
                           return {
@@ -403,7 +418,7 @@ const Address: React.FC = () => {
                               created_at: [values.startTime, values.endTime],
                           };
                       }
-                      console.log('form + created_at', values, type);
+                      // console.log('form + created_at', values, type);
                       return values;
                   },
               }}
@@ -412,7 +427,7 @@ const Address: React.FC = () => {
                   onChange: (page) => console.log(page),
               }}
               dateFormatter="string"
-              headerTitle="高级表格"
+              headerTitle="项目列表"
               toolBarRender={() => [
                   <Button
                       key="button"

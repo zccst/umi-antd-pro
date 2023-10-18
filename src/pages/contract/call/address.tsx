@@ -1,7 +1,7 @@
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
 import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, message, Tag } from 'antd';
-import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined } from '@ant-design/icons';
+import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
 import request from '../../../utils/req';
@@ -175,12 +175,12 @@ const Address: React.FC = () => {
 
 
     const onCreate = (values: any) => {
-      console.log('Received values of form: ', values);
+      // console.log('Received values of form: ', values);
       const param = {
         id: values['id'],
         tag: values['tag'],
       }
-      console.log(param);
+      console.log(param, values);
       // return;
       setConfirmLoading(true);
       request.post(`${addrUrlPrefix}/update`, {
@@ -236,7 +236,7 @@ const Address: React.FC = () => {
         dataIndex: 'addr',
         copyable: true,
         ellipsis: true,
-        tip: '名称过长会自动收缩',
+        // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
         formItemProps: {
           rules: [
@@ -262,7 +262,7 @@ const Address: React.FC = () => {
         dataIndex: 'tag',
         copyable: true,
         ellipsis: true,
-        tip: '名称过长会自动收缩',
+        // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
         formItemProps: {
           rules: [
@@ -366,7 +366,7 @@ const Address: React.FC = () => {
               actionRef={actionRef} // Table action 的引用，便于自定义触发
               cardBordered  // Table 和 Search 外围 Card 组件的边框
               request={async (params = {}, sort, filter) => {
-                  console.log('params', params, sort, filter);
+                  // console.log('params', params, sort, filter);
                   if (params['project_id'] === 'all') {
                     params['project_id'] = ''
                   }
@@ -377,7 +377,7 @@ const Address: React.FC = () => {
                     params,
                   }).then(r => ret = r);
 
-                  console.log('ret', ret, typeof ret);
+                  // console.log('ret', ret, typeof ret);
 
                   if (ret.code !== 0) {
                     messageApi.open({
@@ -417,6 +417,21 @@ const Address: React.FC = () => {
                   labelWidth: 'auto', // 标签的宽度 'number' | 'auto'
                   // collapsed: false, // 默认展开状态并去掉"收起"选项
                   // collapseRender:() => null
+                  optionRender: ({ searchText }, { form }) => {
+                    // console.log(searchConfig, formProps, dom)
+                    return [
+                      <Button
+                        key="search"
+                        type="primary"
+                        icon={<SearchOutlined />}
+                        onClick={() => {
+                          form?.submit();
+                        }}
+                      >
+                        {searchText}
+                      </Button>,
+                    ];
+                  },
               }}
               options={{ // table 工具栏，设为 false 时不显示.传入 function 会点击时触发
                   setting: {
@@ -426,7 +441,7 @@ const Address: React.FC = () => {
               form={{
                   // 由于配置了 transform，提交的参与与定义的不同这里需要转化一下
                   syncToUrl: (values, type) => {
-                      console.log('form', values, type);
+                      // console.log('form', values, type);
                       if (type === 'get') {
                           console.log('form + get', values, type);
                           return {
@@ -443,7 +458,7 @@ const Address: React.FC = () => {
                   onChange: (page) => console.log(page),
               }}
               dateFormatter="string"
-              headerTitle="高级表格"
+              headerTitle="地址列表"
               toolBarRender={() => [
                   // <Button
                   //     key="button"
