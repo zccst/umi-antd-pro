@@ -1,7 +1,7 @@
 /* 定制连接钱包样式 */
 :root {
     --account-center-position-top: -15px;
-    --account-center-position-right: 149px;
+    --account-center-position-right: 178px;
     --account-center-z-index: 101;
 }
 
@@ -99,13 +99,13 @@
 }
 
 .form-position-result {
-    background-color: transparent;
-    border: none
+    background-color: transparent !important;
+    border: none !important;
 }
 textarea.form-position-result:focus {
     border: none !important;
     outline: none !important;
-    box-shadow: none;
+    box-shadow: none !important;
     /* background-color: aqua; */
 }
 

@@ -111,7 +111,7 @@ const Login: React.FC = () => {
   return (
     <div className={styles.container}>
       <div className={styles.lang} data-lang>
-        {SelectLang && <SelectLang />}
+        {/* {SelectLang && <SelectLang />} */}
       </div>
       <div className={styles.content}>
         <LoginForm
@@ -181,7 +181,7 @@ const Login: React.FC = () => {
                 }}
                 placeholder={intl.formatMessage({
                   id: 'pages.login.username.placeholder',
-                  defaultMessage: '用户名: admin or user',
+                  defaultMessage: '请输入您的okg.com邮箱（完整）',
                 })}
                 rules={[
                   {
@@ -203,7 +203,7 @@ const Login: React.FC = () => {
                 }}
                 placeholder={intl.formatMessage({
                   id: 'pages.login.password.placeholder',
-                  defaultMessage: '密码: ant.design',
+                  defaultMessage: '请输入密码',
                 })}
                 rules={[
                   {

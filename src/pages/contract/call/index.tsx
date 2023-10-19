@@ -65,7 +65,7 @@ const Call: React.FC = () => {
 
     // 部门project列表，从服务端获取
     const [deptProjListFromServer, setDeptProjListFromServer] = useState({deptList: [], projListbyDept: {}});
-    const [currDepartmentId, setCurrDepartmentId] = useState('2'); // 默认NFT
+    const [currDepartmentId, setCurrDepartmentId] = useState(''); // 没法默认
     const [currProjectId, setCurrProjectId] = useState('');
     const [currEnv, setCurrEnv] = useState('prod');
     const [loading, setLoading] = useState(false);
@@ -80,6 +80,7 @@ const Call: React.FC = () => {
     let [addrList, setAddrList] = useState([{}]);
     let [abiJson, setAbiJson] = useState('');
     let [currAddress, setCurrAddress] = useState('');
+    let [currChainId, setCurrChainId] = useState('');
 
     // 当前合约对象
     let [currContract, setCurrContract] = useState({});
@@ -191,6 +192,13 @@ const Call: React.FC = () => {
             return {...item, isActive: item.addr === currAddress ? true : false}
         });
         setAddrList(newList);
+
+        // 查看当前的链，与钱包中的链是否一致。如果不一致，则提示切换至与用户选择的链一致。
+        const selectChainId = '0x' + currChainId;
+        console.log('检查链是否一致', connectedChain?.id, selectChainId, connectedChain?.id !== selectChainId);
+        if (connectedChain?.id !== selectChainId) {
+            setChain({ chainId: selectChainId });
+        }
 
         // 还原合约
         // 合约地址，signer, provider
@@ -530,7 +538,9 @@ const Call: React.FC = () => {
     // 右侧 地址列表
     const onAddressClick = (e: any) => {
         const completeAddr = e.target.getAttribute('data-complete-addr');
+        const chainId = e.target.getAttribute('data-chain-id');
         setCurrAddress(completeAddr);
+        setCurrChainId(chainId);
         const newList = addrList.map((item: any) => {
             return {...item, isActive: item.addr === completeAddr ? true : false}
         });
@@ -544,6 +554,7 @@ const Call: React.FC = () => {
             return {
                 title: shortenAddress(item.addr, 15),
                 completeAddr: item.addr,
+                chainId: item.chain_id,
                 isActive: item.isActive,
                 avatar: item.isActive ?  thumbtackActive : thumbtackDefault,
                 description: `${item.chain_name} (chain_id = ${item.chain_id}) 标签:${item.tag}`
@@ -556,7 +567,7 @@ const Call: React.FC = () => {
                 <List.Item className={`address-${item.isActive ? 'active' : ''} `}>
                     <List.Item.Meta
                         avatar={<Avatar src={item.avatar} />}
-                        title={<a data-complete-addr={item.completeAddr} onClick={onAddressClick}>{item.title}</a>}
+                        title={<a data-complete-addr={item.completeAddr} data-chain-id={item.chainId} onClick={onAddressClick}>{item.title}</a>}
                         description={`${item.description}`}
                     />
                 </List.Item>
@@ -625,7 +636,7 @@ const Call: React.FC = () => {
                         <div  className='header-align-right'>
                             <Input.Group compact>
                                 <Input 
-                                    placeholder="可输入临时地址，或从右侧选择常用地址"
+                                    placeholder="点击Address列表选择地址，或输入临时地址"
                                     style={{ width: 330 }} 
                                     allowClear
                                     defaultValue="" 
@@ -655,7 +666,8 @@ const Call: React.FC = () => {
                     <Col span={5} {...topColResponsiveProps} style={{ borderRight: '1px solid #ffffff'}}>
                         <div className='search-condition-title'>部门：</div>
                         <Select
-                            defaultValue="1"
+                            defaultValue=""
+                            placeholder="请选择部门"
                             style={{ width: '100%' }}
                             onChange={deptHandleChange}
                             value={currDepartmentId}
@@ -664,6 +676,7 @@ const Call: React.FC = () => {
                         <div className='search-condition-title'>项目：</div>
                         <Select
                             // defaultValue="all"
+                            placeholder="请选择项目"
                             style={{ width: '100%' }}
                             onChange={projectHandleChange}
                             value={currProjectId}
@@ -672,6 +685,7 @@ const Call: React.FC = () => {
                         <div className='search-condition-title'>环境：</div>
                         <Select
                             defaultValue="prod"
+                            placeholder="请选择环境"
                             style={{ width: '100%' }}
                             onChange={envHandleChange}
                             value={currEnv}
@@ -701,7 +715,7 @@ const Call: React.FC = () => {
                             </div>
                         </div>
                         {
-                            !Object.keys(methodList[0]).length && <div className='method-empty'>Content is empty</div>
+                            methodList && methodList[0] && !Object.keys(methodList[0]).length && <div className='method-empty'>Content is empty</div>
                         }
                         <Form {...layout} form={form} name="control-hooks" onFinish={onFinish}>
                             <Collapse bordered={false} activeKey={methodKey} defaultActiveKey={methodKey} onChange={onMethodChange}>
