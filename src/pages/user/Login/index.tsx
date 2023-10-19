@@ -20,6 +20,7 @@ import { parse } from 'querystring';
 import React, { useState } from 'react';
 import { FormattedMessage, history, SelectLang, useIntl, useModel } from 'umi';
 import styles from './index.less';
+import { LOGINPATH } from '../../../utils/constant'
 
 const LoginMessage: React.FC<{
   content: string;
@@ -44,7 +45,7 @@ const Login: React.FC = () => {
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
     if (userInfo) {
-      await setInitialState((s) => ({
+      await setInitialState((s: any) => ({
         ...s,
         currentUser: userInfo,
       }));
@@ -57,20 +58,43 @@ const Login: React.FC = () => {
       const response = await login({ ...values, type });
       console.log('登录请求后', response);
       if (response.code === 0) {
+        // 先设置token
         window.localStorage.setItem('token', response.data.token);
 
+        await fetchUserInfo(); // 获取用户信息需要token
+        
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',
           defaultMessage: '登录成功！',
         });
         message.success(defaultLoginSuccessMessage);
-        await fetchUserInfo();
+
+        
         /** 此方法会跳转到 redirect 参数所在的位置 */
         if (!history) return;
-        const query = parse(history.location.search);
+
+        const query = parse(history.location.search ? history.location.search.substr(1) : history.location.search);
         const { redirect } = query as { redirect: string };
-        history.push(redirect || '/');
+
+        // const { query = {}, search, pathname } = history.location;
+
+        console.log('跳转前', query, redirect);
+        // 跳转
+        if (redirect) {
+          console.log('进到redirect');
+          // history.push(redirect);
+          window.location.href = redirect;
+        } else {
+          console.log('//////');
+          // history.push('/');
+          window.location.href = '/'
+        }
         return;
+      } else if (response.code === 403) {
+        //TODO
+        message.error('登录已超时，请重新登录。');
+      } else {
+        message.error('登录失败，原因：' + response.msg);
       }
       // 如果失败去设置用户错误信息
       setUserLoginState(response);

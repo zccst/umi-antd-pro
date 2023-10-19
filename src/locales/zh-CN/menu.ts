@@ -7,7 +7,7 @@ export default {
   'menu.login': '登录',
   'menu.register': '注册',
   'menu.register-result': '注册结果',
-  'menu.contract': '合约',
+  'menu.contract': '合约abi调用',
   'menu.contract.call': '合约调用',
   'menu.contract.abi': 'abi管理',
   'menu.contract.address': '地址管理',

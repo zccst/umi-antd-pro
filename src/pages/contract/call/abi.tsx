@@ -4,10 +4,11 @@ import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, 
 import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
+import { history, Link } from 'umi';
 import request from '../../../utils/req';
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
-import { abiUrlPrefix, deptProjUrl, CHAIN_LIST } from '../../../utils/constant'
+import { abiUrlPrefix, deptProjUrl, CHAIN_LIST, LOGINPATH } from '../../../utils/constant'
 
 
 
@@ -340,6 +341,12 @@ const Abi: React.FC = () => {
             }
             // console.log('targetOptionObj', targetOptionObj);
             setDeptProjListFromServer(targetOptionObj);
+          } else if (response.code === 403) {
+            //TODO
+            message.error('登录已超时，请重新登录。');
+            history.push(LOGINPATH);
+          } else {
+              message.error("获取部门列表失败，原因：" + response.msg);
           }
         })
         .catch(function(error) {
@@ -397,6 +404,10 @@ const Abi: React.FC = () => {
             content: '提交成功！',
           });
           actionRef.current?.reload();
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
+          history.push(LOGINPATH);
         } else {
           messageApi.open({
             type: 'error',
@@ -429,6 +440,10 @@ const Abi: React.FC = () => {
             content: '提交成功！',
           });
           actionRef.current?.reload();
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
+          history.push(LOGINPATH);
         } else {
           messageApi.open({
             type: 'error',
@@ -510,10 +525,10 @@ const Abi: React.FC = () => {
         valueType: 'select',
         valueEnum: {
           all: {text: '全部'},
-          available: {
+          prod: {
             text: 'prod',
           },
-          disable: {
+          test: {
             text: 'test',
           },
         },
@@ -676,6 +691,9 @@ const Abi: React.FC = () => {
                   if (params['project_id'] === 'all') {
                     params['project_id'] = ''
                   }
+                  if (params['env'] === 'all') {
+                    params['env'] = ''
+                  }
                   let ret: any = {};
                   await request<{
                       data: AbiItem[];
@@ -684,8 +702,11 @@ const Abi: React.FC = () => {
                   }).then(r => ret = r);
                   
                   // console.log('ret', ret, typeof ret);
-
-                  if (ret.code !== 0) {
+                  if (ret.code === 403) {
+                    //TODO
+                    message.error('登录已超时，请重新登录。');
+                    history.push(LOGINPATH);
+                  } else if (ret.code !== 0) {
                     messageApi.open({
                       type: 'error',
                       content: '获取地址列表失败，原因：' + ret.msg,

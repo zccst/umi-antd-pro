@@ -3,10 +3,14 @@ import RightContent from '@/components/RightContent';
 import { BookOutlined, LinkOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
+
 // import { PageLoading } from '@ant-design/pro-layout';没有安装这个插件
+import PageLoading from '@/components/PageLoading'; // 自己直接用源码写一个
+
 import type { RunTimeLayoutConfig } from 'umi';
 import { history, Link } from 'umi';
 import { currentUser as queryCurrentUser } from './services/ant-design-pro/api';
+import { message } from 'antd';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
@@ -30,14 +34,22 @@ export async function getInitialState(): Promise<{
   // 此处仅定义函数，未执行
   const fetchUserInfo = async () => {
     try {
-      const msg = await queryCurrentUser();
-      return msg.data;
+      const response = await queryCurrentUser();
+      if (response.code === 0) {
+        return { ...response.data, avatar: 'https://img.duoziwang.com/2021/04/08260845109948.jpg'};
+      } else if (response.code === 403) {
+        history.push(loginPath);
+      } else {
+        message.error('获取用户信息失败，原因：' + response.msg);
+        history.push(loginPath);
+      }
     } catch (error) {
       history.push(loginPath);
     }
     return undefined;
   };
   // 如果是登录页面，不执行
+  console.log('app页的history.location.pathname' , history.location.pathname);
   if (history.location.pathname !== loginPath) {
     const currentUser = await fetchUserInfo(); // 不是登录页才执行调用
     console.log('getInitialState 除登录页之外的所有页面 currentUser:', currentUser);
@@ -90,11 +102,12 @@ export const layout: RunTimeLayoutConfig = ({
     unAccessible: <div>unAccessible</div>,
     // 增加一个 loading 的状态
     childrenRender: (children, props) => {
-      // if (initialState?.loading) return <PageLoading />;
+      if (initialState?.loading) return <PageLoading />;
       return (
         <>
           {children}
-          {!props.location?.pathname?.includes('/login') && (
+          {/* 隐藏设置 */}
+          {/* {!props.location?.pathname?.includes('/login') && (
             <SettingDrawer
               enableDarkTheme
               settings={initialState?.settings}
@@ -105,7 +118,7 @@ export const layout: RunTimeLayoutConfig = ({
                 }));
               }}
             />
-          )}
+          )} */}
         </>
       );
     },

@@ -4,10 +4,11 @@ import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, 
 import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
+import { history, Link } from 'umi';
 import request from '../../../utils/req';
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
-import { addrUrlPrefix, deptProjUrl } from '../../../utils/constant'
+import { addrUrlPrefix, deptProjUrl, LOGINPATH } from '../../../utils/constant'
 
 type AddressItem = {
     id: number;
@@ -165,6 +166,12 @@ const Address: React.FC = () => {
             }
             // console.log('targetOptionObj', targetOptionObj);
             setDeptProjListFromServer(targetOptionObj);
+          } else if (response.code === 403) {
+            //TODO
+            message.error('登录已超时，请重新登录。');
+            history.push(LOGINPATH);
+          } else {
+              message.error("获取部门列表失败，原因：" + response.msg);
           }
         })
         .catch(function(error) {
@@ -193,6 +200,10 @@ const Address: React.FC = () => {
             content: '提交成功！',
           });
           actionRef.current?.reload();
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
+          history.push(LOGINPATH);
         } else {
           messageApi.open({
             type: 'error',
@@ -236,16 +247,17 @@ const Address: React.FC = () => {
         dataIndex: 'addr',
         copyable: true,
         ellipsis: true,
+        hideInSearch: true, // 在查询表单中不展示此项
         // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
-        formItemProps: {
-          rules: [
-            {
-              required: true,
-              message: '此项为必填项',
-            },
-          ],
-        },
+        // formItemProps: {
+        //   rules: [
+        //     {
+        //       required: true,
+        //       message: '此项为必填项',
+        //     },
+        //   ],
+        // },
       },
       {
         title: '所属网络',
@@ -379,7 +391,11 @@ const Address: React.FC = () => {
 
                   // console.log('ret', ret, typeof ret);
 
-                  if (ret.code !== 0) {
+                  if (ret.code === 403) {
+                    //TODO
+                    message.error('登录已超时，请重新登录。');
+                    history.push(LOGINPATH);
+                  } else if (ret.code !== 0) {
                     messageApi.open({
                       type: 'error',
                       content: '获取地址列表失败，原因：' + ret.msg,

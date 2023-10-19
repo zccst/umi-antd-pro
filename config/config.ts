@@ -17,8 +17,8 @@ export default defineConfig({
   dva: {
     // hmr: true,
   },
-  srcTranspiler: 'esbuild', // dev时
-  // jsMinifier: 'terser', // build时
+  // srcTranspiler: 'esbuild', // dev时
+  jsMinifier: 'terser', // build时
   layout: {
     // https://umijs.org/zh-CN/plugins/plugin-layout
     locale: true,
@@ -299,7 +299,7 @@ export default defineConfig({
     },
     {
       name: 'contract',
-      icon: '',
+      icon: 'MenuUnfoldOutlined',
       path: '/contract',
       routes: [
         {

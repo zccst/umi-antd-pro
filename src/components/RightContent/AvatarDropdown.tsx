@@ -20,17 +20,39 @@ export type GlobalHeaderRightProps = {
  * 退出登录，并且将当前的 url 保存
  */
 const loginOut = async () => {
-  await outLogin();
+  // await outLogin();
+  // 清除token TODO 代替后端api接口调用
+  window.localStorage.setItem('token', '');
+
   const { query = {}, search, pathname } = history.location;
   const { redirect } = query;
+
+  console.log(window.location.pathname, redirect, pathname + search);
   // Note: There may be security issues, please note
-  if (window.location.pathname !== '/user/login' && !redirect) {
-    history.replace({
-      pathname: '/user/login',
-      search: stringify({
-        redirect: pathname + search,
-      }),
-    });
+  // if (window.location.pathname !== '/user/login' && !redirect) {
+  //   history.replace({
+  //     pathname: '/user/login',
+  //     search: stringify({
+  //       redirect: pathname + search,
+  //     }),
+  //   });
+  // }
+  if (window.location.pathname !== '/user/login') {
+    if (!redirect) {
+      history.replace({
+        pathname: '/user/login',
+        search: stringify({
+          redirect: pathname + search,
+        }),
+      });
+    } else {
+      history.replace({
+        pathname: '/user/login',
+        search: stringify({
+          redirect: redirect,
+        }),
+      });
+    }
   }
 };
 
@@ -41,9 +63,6 @@ const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
     (event: MenuInfo) => {
       const { key } = event;
       if (key === 'logout') { // 退出登录
-        // 清除token
-        window.localStorage.setItem('token', '');
-
         // 清除initialState中的用户信息
         setInitialState((s) => ({ ...s, currentUser: undefined }));
         loginOut();

@@ -18,13 +18,15 @@ const { TextArea, Search } = Input;
 import type { DataNode, TreeProps } from 'antd/es/tree';
 import { DownOutlined, SearchOutlined, ReadOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { Suspense, useState, useEffect } from 'react';
+import { history, Link } from 'umi';
+
 import ReactJson from 'react-json-view'
 
 import request from '../../../utils/req';
 
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
-import { deptProjUrl, getProjListUrl, getAbiInfoUrl } from '../../../utils/constant'
+import { deptProjUrl, getProjListUrl, getAbiInfoUrl, LOGINPATH } from '../../../utils/constant'
 import './index.css'
 import thumbtackActive from './icons/thumbtack-active.jpg'
 import thumbtackDefault from './icons/thumbtack-default.jpg'
@@ -156,6 +158,12 @@ const Call: React.FC = () => {
                 deptList: deptList,
                 projListbyDept: targetOptionObj,
               });
+            } else if (response.code === 403) {
+                //TODO
+                message.error('登录已超时，请重新登录。');
+                history.push(LOGINPATH);
+            } else {
+                message.error("获取部门列表失败，原因：" + response.msg);
             }
           })
           .catch(function(error) {
@@ -249,6 +257,10 @@ const Call: React.FC = () => {
                     });
 
                     setTreeDataSource(treeDataRoot)
+                } else if (response.code === 403) {
+                    //TODO
+                    message.error('登录已超时，请重新登录。');
+                    history.push(LOGINPATH);
                 } else {
                     message.error('查询失败，原因：' + response.msg);
                 }
@@ -315,6 +327,10 @@ const Call: React.FC = () => {
                     setMethodList(finalArr);
                     setAddrList(addrs);
                     setAbiJson(abi);
+                } else if (response.code === 403) {
+                    //TODO
+                    message.error('登录已超时，请重新登录。');
+                    history.push(LOGINPATH);
                 } else {
                     message.error('查询合约详情失败，原因：' + response.msg);
                 }
@@ -566,12 +582,31 @@ const Call: React.FC = () => {
     return <GridContent>
         <>
             {Object.keys(web3Onboard).length ? <section >
+                <Alert
+                    message="合约调用流程6步骤："
+                    description="1.点击右上角‘连接钱包’按钮，并切换至目标网络 -> 2.在左侧，根据部门、项目和环境查询合约 -> 3. 点击树结构，选择目标合约和版本，渲染出中间的读写方法和右侧关联地址列表 -> 
+                    4.点击右侧Address地址列表，选中一个地址（图钉📌会高亮） -> 5.点击‘At Address’按钮，完成地址关联 -> 6.开始使用中间的合约读写方法。"
+                    type="info"
+                    closable
+                    showIcon
+                    onClose={onAlertClose}
+                    />
                 <div className='user-info-basic'>
                     <div className='header-align-left'>
                         当前ABI： {titleProject} - {currEnv} - {titleInfo.contractName} - {titleInfo.version}
                     </div>
                     <div className='header-align-right'>
-                        {wallet && (<Button
+                        {!wallet && (
+                        <Button style={{width: 102}}
+                            onClick={async () => {
+                            const walletsConnected = await connect()
+                            console.log('connected wallets: ', walletsConnected)
+                            }}
+                        >
+                            连接钱包
+                        </Button>
+                        )}
+                        {wallet && (<Button style={{width: 102}}
                             onClick={async () => {
                                 const walletsConnected = await disconnect(wallet)
                                 console.log('connected wallets: ', walletsConnected)
@@ -586,16 +621,6 @@ const Call: React.FC = () => {
                 <div className='user-info-container'>
                     <div>合约部署地址： {currAddress}</div>
                     <div>
-                        {!wallet && (
-                        <Button
-                            onClick={async () => {
-                            const walletsConnected = await connect()
-                            console.log('connected wallets: ', walletsConnected)
-                            }}
-                        >
-                            连接钱包
-                        </Button>
-                        )}
                         {wallet && (
                         <div  className='header-align-right'>
                             <Input.Group compact>
@@ -613,15 +638,7 @@ const Call: React.FC = () => {
                         )}
                     </div>
                 </div>
-                <Alert
-                    message="合约调用流程6步骤："
-                    description="1.点击右上角‘连接钱包’按钮，并切换至目标网络 -> 2.在左侧，根据部门、项目和环境查询合约 -> 3. 点击树结构，选择目标合约和版本，渲染出中间的读写方法和右侧关联地址列表 -> 
-                    4.点击右侧Address地址列表，选中一个地址（图钉📌会高亮） -> 5.点击‘At Address’按钮，完成地址关联 -> 6.开始使用中间的合约读写方法。"
-                    type="info"
-                    closable
-                    showIcon
-                    onClose={onAlertClose}
-                    />
+                
             </section>
             :
             <div>Loading...</div>
@@ -635,7 +652,7 @@ const Call: React.FC = () => {
                         marginTop: 0,
                     }}
                     >
-                    <Col span={5} {...topColResponsiveProps}>
+                    <Col span={5} {...topColResponsiveProps} style={{ borderRight: '1px solid #ffffff'}}>
                         <div className='search-condition-title'>部门：</div>
                         <Select
                             defaultValue="1"
@@ -675,7 +692,7 @@ const Call: React.FC = () => {
                             treeData={treeDataSource}
                         />
                     </Col>
-                    <Col span={11} {...topColResponsiveProps}>
+                    <Col span={11} {...topColResponsiveProps}  style={{ borderRight: '1px solid #ffffff'}}>
                         <div className='method-header'>
                             <div>合约读写方法：</div>
                             <div>
@@ -683,6 +700,9 @@ const Call: React.FC = () => {
                                 <Switch checkedChildren="打开" unCheckedChildren="关闭" onChange={onSwitchChange} />
                             </div>
                         </div>
+                        {
+                            !Object.keys(methodList[0]).length && <div className='method-empty'>Content is empty</div>
+                        }
                         <Form {...layout} form={form} name="control-hooks" onFinish={onFinish}>
                             <Collapse bordered={false} activeKey={methodKey} defaultActiveKey={methodKey} onChange={onMethodChange}>
                                 {
