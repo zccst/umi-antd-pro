@@ -67,7 +67,7 @@ const Call: React.FC = () => {
     const [deptProjListFromServer, setDeptProjListFromServer] = useState({deptList: [], projListbyDept: {}});
     const [currDepartmentId, setCurrDepartmentId] = useState(''); // 没法默认
     const [currProjectId, setCurrProjectId] = useState('');
-    const [currEnv, setCurrEnv] = useState('prod');
+    const [currEnv, setCurrEnv] = useState('prod'); // 空表示全部
     const [loading, setLoading] = useState(false);
 
     // treeDate
@@ -159,6 +159,19 @@ const Call: React.FC = () => {
                 deptList: deptList,
                 projListbyDept: targetOptionObj,
               });
+              if (deptList.length) {
+                setCurrDepartmentId(deptList[0].value);
+                
+                if (targetOptionObj[deptList[0].value].child.length) {
+                    const tmpProId = targetOptionObj[deptList[0].value].child[0].value;
+                    setCurrProjectId(tmpProId);
+                    _doSearch({
+                        dept_id: +deptList[0].value,
+                        project_id: tmpProId,
+                        env: currEnv
+                    });
+                }
+              }
             } else if (response.code === 403) {
                 //TODO
                 message.error('登录已超时，请重新登录。');
@@ -186,13 +199,6 @@ const Call: React.FC = () => {
         // 检查地址长度
         // TODO
 
-        // 设置右侧address，如果是临时地址，则全部不再高亮。
-        setCurrAddress(currAddress);
-        const newList = addrList.map((item: any) => {
-            return {...item, isActive: item.addr === currAddress ? true : false}
-        });
-        setAddrList(newList);
-
         // 查看当前的链，与钱包中的链是否一致。如果不一致，则提示切换至与用户选择的链一致。
         const selectChainId = '0x' + currChainId;
         console.log('检查链是否一致', connectedChain?.id, selectChainId, connectedChain?.id !== selectChainId);
@@ -200,11 +206,27 @@ const Call: React.FC = () => {
             setChain({ chainId: selectChainId });
         }
 
+        // 设置右侧address，如果是临时地址，则全部不再高亮。
+        setCurrAddress(currAddress);
+        const newList = addrList.map((item: any) => {
+            return {
+                ...item, 
+                isActive: item.addr === currAddress ? true : false,
+                isAvatarActive: item.addr === currAddress ? true : false,
+            }
+        });
+        setAddrList(newList);
+
         // 还原合约
         // 合约地址，signer, provider
         const signer = provider.getUncheckedSigner();
-        const contract = new ethers.Contract(currAddress, abiJson, signer);
-        setCurrContract(contract);
+        try {
+            const contract = new ethers.Contract(currAddress, abiJson, signer);
+            setCurrContract(contract);
+        } catch (exception) {
+            console.log('try catch', exception, typeof exception);
+            alert(exception);
+        }
 
         message.success("At Address地址 " + currAddress + " 成功");
     }
@@ -228,19 +250,8 @@ const Call: React.FC = () => {
     const envHandleChange = (value: string) => {
         setCurrEnv(value);
     };
-    const onSearch = () => {
-        const proj = currProjectId;
-        if (!proj) {
-            message.warning('请先从项目下拉列表中选择一个项目，再查询！');
-            return false;
-        }
-        const params = {
-            dept_id: +currDepartmentId,
-            project_id: +currProjectId,
-            env: currEnv
-        }
+    const _doSearch = (params: any) => {
         console.log(`search`, params);
-        setLoading(true);
         request
             .get(getProjListUrl, {
                 params
@@ -276,6 +287,20 @@ const Call: React.FC = () => {
             .catch(function(error) {
                 console.log(error);
             });
+    };
+    const onSearch = () => {
+        const proj = currProjectId;
+        if (!proj) {
+            message.warning('请先从项目下拉列表中选择一个项目，再查询！');
+            return false;
+        }
+        const params = {
+            dept_id: +currDepartmentId,
+            project_id: +currProjectId,
+            env: currEnv
+        }
+        setLoading(true);
+        _doSearch(params);
     };
 
     const onTreeSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
@@ -556,7 +581,7 @@ const Call: React.FC = () => {
                 completeAddr: item.addr,
                 chainId: item.chain_id,
                 isActive: item.isActive,
-                avatar: item.isActive ?  thumbtackActive : thumbtackDefault,
+                avatar: item.isAvatarActive ?  thumbtackActive : thumbtackDefault,
                 description: `${item.chain_name} (chain_id = ${item.chain_id}) 标签:${item.tag}`
             }
         });
@@ -584,7 +609,7 @@ const Call: React.FC = () => {
     (deptProjListFromServer.projListbyDept as any)[currDepartmentId]?.child.map((item: any) => {
         if (currProjectId === '') {
             // 刚打开时的默认值，什么也不做
-        } else if (item.value === currDepartmentId) {
+        } else if (item.value === currProjectId) {
             titleProject = item.label;
         }
     });
@@ -690,6 +715,7 @@ const Call: React.FC = () => {
                             onChange={envHandleChange}
                             value={currEnv}
                             options={[
+                                // { value: '', label: '全部' },
                                 { value: 'prod', label: 'prod' },
                                 { value: 'test', label: 'test' },
                             ]}
