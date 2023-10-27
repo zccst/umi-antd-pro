@@ -6,14 +6,18 @@ import {
 } from '@ant-design/icons';
 import { GridContent } from '@ant-design/pro-components';
 import { Avatar, Card, Col, Divider, Input, Row, Form, Button, message, Tag } from 'antd';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import type { RouteChildrenProps } from 'react-router';
-import { Link, useRequest, useModel } from 'umi';
+import { Link, useRequest, history, useModel } from 'umi';
+import { stringify } from 'querystring';
 import styles from './password.less';
 import type { CurrentUser, tabKeyType, TagType } from '../center/data';
 import { queryCurrent } from '../center/service';
 
 import { changePassword } from '@/services/ant-design-pro/api';
+import { LOGINPATH } from '../../../utils/constant';
+
+
 
 const Center: React.FC<RouteChildrenProps> = () => {
   const [tabKey, setTabKey] = useState<tabKeyType>('articles');
@@ -24,11 +28,44 @@ const Center: React.FC<RouteChildrenProps> = () => {
   //   return queryCurrent();
   // });
 
+  const logOut = useCallback(
+    () => {
+      setInitialState((s: any) => ({ ...s, currentUser: undefined }));
+      window.localStorage.setItem('token', '');
+
+      const { query = {}, search, pathname } = history.location;
+      const { redirect } = query;
+
+      console.log('reset password page', window.location.pathname, redirect, pathname + search);
+      if (window.location.pathname !== LOGINPATH) {
+        if (!redirect) {
+          history.replace({
+            pathname: LOGINPATH,
+            search: stringify({
+              redirect: pathname + search,
+            }),
+          });
+        } else {
+          history.replace({
+            pathname: LOGINPATH,
+            search: stringify({
+              redirect: redirect,
+            }),
+          });
+        }
+      }
+    },
+    [setInitialState],
+  );
+
   const onFinish = async(values: any) => {
     console.log('Success:', values);
     const response = await changePassword(values);
     if (response.code === 0) {
       message.success('重置密码成功！');
+      setTimeout(() => {
+        logOut();
+      }, 1000);
     } else {
       message.error('重置密码失败，原因：' + response.msg);
     }

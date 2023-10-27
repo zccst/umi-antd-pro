@@ -67,7 +67,7 @@ const Call: React.FC = () => {
     const [deptProjListFromServer, setDeptProjListFromServer] = useState({deptList: [], projListbyDept: {}});
     const [currDepartmentId, setCurrDepartmentId] = useState(''); // 没法默认
     const [currProjectId, setCurrProjectId] = useState('');
-    const [currEnv, setCurrEnv] = useState('prod'); // 空表示全部
+    const [currEnv, setCurrEnv] = useState(''); // 空表示全部。prod
     const [loading, setLoading] = useState(false);
 
     // treeDate
@@ -161,16 +161,20 @@ const Call: React.FC = () => {
               });
               if (deptList.length) {
                 setCurrDepartmentId(deptList[0].value);
-                
-                if (targetOptionObj[deptList[0].value].child.length) {
-                    const tmpProId = targetOptionObj[deptList[0].value].child[0].value;
-                    setCurrProjectId(tmpProId);
-                    _doSearch({
-                        dept_id: +deptList[0].value,
-                        project_id: tmpProId,
-                        env: currEnv
-                    });
-                }
+                _doSearch({
+                    dept_id: +deptList[0].value,
+                    project_id: '',
+                    env: ''
+                });
+                // if (targetOptionObj[deptList[0].value].child.length) {
+                //     const tmpProId = targetOptionObj[deptList[0].value].child[0].value;
+                //     setCurrProjectId(tmpProId);
+                //     _doSearch({
+                //         dept_id: +deptList[0].value,
+                //         project_id: tmpProId,
+                //         env: currEnv
+                //     });
+                // }
               }
             } else if (response.code === 403) {
                 //TODO
@@ -211,8 +215,8 @@ const Call: React.FC = () => {
         const newList = addrList.map((item: any) => {
             return {
                 ...item, 
-                isActive: item.addr === currAddress ? true : false,
-                isAvatarActive: item.addr === currAddress ? true : false,
+                isActive: (item.addr === currAddress && item.chain_id === currChainId) ? true : false,
+                isAvatarActive: (item.addr === currAddress && item.chain_id === currChainId) ? true : false,
             }
         });
         setAddrList(newList);
@@ -261,7 +265,7 @@ const Call: React.FC = () => {
                 setLoading(false);
                 if (response.code === 0) {
                     const data = response.data;
-                    const treeDataRoot = data.abis.map((item: any, index: number) => {
+                    const treeDataRoot = data.map((item: any, index: number) => {
                         const childArr = item.versions.map((version: any, i: number) => {
                             return {
                                 title: version.version,
@@ -269,7 +273,7 @@ const Call: React.FC = () => {
                             }
                         });
                         return {
-                            title: item.name + ' [' + (item.updatable ? '可升级' : '不可升级') + ']',
+                            title: item.project_name + '/' + item.env + '/' + item.name + ' [' + (item.updatable ? '可升级' : '不可升级') + ']',
                             key: index,
                             children: childArr
                         }
@@ -305,7 +309,7 @@ const Call: React.FC = () => {
 
     const onTreeSelect: TreeProps['onSelect'] = (selectedKeys, info) => {
         // console.log('selected', selectedKeys, info, treeDataSource);
-        console.log('选中的树节点', selectedKeys);
+        // console.log('选中的树节点', selectedKeys);
         if (typeof selectedKeys[0] === 'number') {
             message.warning('请展开树节点，选择叶子节点对应的具体版本！');
             return false;
@@ -567,7 +571,7 @@ const Call: React.FC = () => {
         setCurrAddress(completeAddr);
         setCurrChainId(chainId);
         const newList = addrList.map((item: any) => {
-            return {...item, isActive: item.addr === completeAddr ? true : false}
+            return {...item, isActive: (item.addr === completeAddr && item.chain_id === chainId) ? true : false, isAvatarActive: false }
         });
         setAddrList(newList);
     }
@@ -621,7 +625,7 @@ const Call: React.FC = () => {
                 <Alert
                     message="合约调用流程6步骤："
                     description="1.点击右上角‘连接钱包’按钮，并切换至目标网络 -> 2.在左侧，根据部门、项目和环境查询合约 -> 3. 点击树结构，选择目标合约和版本，渲染出中间的读写方法和右侧关联地址列表 -> 
-                    4.点击右侧Address地址列表，选中一个地址（图钉📌会高亮） -> 5.点击‘At Address’按钮，完成地址关联 -> 6.开始使用中间的合约读写方法。"
+                    4.点击右侧Address地址列表，选中一个地址（选中地址会高亮） -> 5.点击‘At Address’按钮，完成地址关联（地址左侧图钉📌会高亮） -> 6.开始使用中间的合约读写方法。"
                     type="info"
                     closable
                     showIcon
@@ -709,13 +713,13 @@ const Call: React.FC = () => {
                         />
                         <div className='search-condition-title'>环境：</div>
                         <Select
-                            defaultValue="prod"
+                            // defaultValue="prod"
                             placeholder="请选择环境"
                             style={{ width: '100%' }}
                             onChange={envHandleChange}
                             value={currEnv}
                             options={[
-                                // { value: '', label: '全部' },
+                                { value: '', label: '全部' },
                                 { value: 'prod', label: 'prod' },
                                 { value: 'test', label: 'test' },
                             ]}
@@ -727,7 +731,8 @@ const Call: React.FC = () => {
                         <Tree
                             showLine
                             switcherIcon={<DownOutlined />}
-                            defaultExpandedKeys={['0-0-0']}
+                            defaultExpandAll={true}
+                            defaultExpandedKeys={['0-1']}
                             onSelect={onTreeSelect}
                             treeData={treeDataSource}
                         />
