@@ -1,113 +1,114 @@
+import {
+  ClusterOutlined,
+  ContactsOutlined,
+  HomeOutlined,
+  PlusOutlined,
+} from '@ant-design/icons';
 import { GridContent } from '@ant-design/pro-components';
-import { Menu } from 'antd';
-import React, { useLayoutEffect, useRef, useState } from 'react';
-import BaseView from './components/base';
-import BindingView from './components/binding';
-import NotificationView from './components/notification';
-import SecurityView from './components/security';
-import styles from './style.less';
+import { Avatar, Card, Col, Divider, Input, Row, Form, Button, message, Tag } from 'antd';
+import React, { useRef, useState, useCallback } from 'react';
+import type { RouteChildrenProps } from 'react-router';
+import { Link, useRequest, history, useModel, useAccess } from 'umi';
+import { stringify } from 'querystring';
+import request from '../../../utils/req';
+import styles from './password.less';
+import type { CurrentUser, tabKeyType, TagType } from '../center/data';
+import { queryCurrent } from '../center/service';
 
-const { Item } = Menu;
+import { changePassword } from '@/services/ant-design-pro/api';
+import { userUrlPrefix, LOGINPATH } from '../../../utils/constant';
 
-type SettingsStateKeys = 'base' | 'security' | 'binding' | 'notification';
-type SettingsState = {
-  mode: 'inline' | 'horizontal';
-  selectKey: SettingsStateKeys;
-};
 
-const Settings: React.FC = () => {
-  const menuMap: Record<string, React.ReactNode> = {
-    base: '基本设置',
-    security: '安全设置',
-    binding: '账号绑定',
-    notification: '新消息通知',
-  };
 
-  const [initConfig, setInitConfig] = useState<SettingsState>({
-    mode: 'inline',
-    selectKey: 'base',
-  });
-  const dom = useRef<HTMLDivElement>();
+const Center: React.FC<RouteChildrenProps> = () => {
+  const [tabKey, setTabKey] = useState<tabKeyType>('articles');
+  const { initialState, setInitialState } = useModel('@@initialState');
 
-  const resize = () => {
-    requestAnimationFrame(() => {
-      if (!dom.current) {
-        return;
+
+  // console.log(history, useModel, useAccess);
+  const access = useAccess();
+  console.log(initialState.currentUser, access.canAdmin ? '管理员' : '普通用户');
+
+  //  获取用户信息
+  // const { data: currentUser, loading } = useRequest(() => {
+  //   return queryCurrent();
+  // });
+
+  const onFinish = async(values: any) => {
+    console.log('Success:', values);
+    request.post(`${userUrlPrefix}/update`, {
+      data: { id : initialState.currentUser.id, name: values['new_name']},
+    })
+    .then(function(response) {
+      if (response.code === 0) {
+        message.success('修改成功，重新登录后可看到新昵称！');
+      } else if (response.code === 403) {
+        //TODO
+        message.error('登录已超时，请重新登录。');
+        history.push(LOGINPATH);
+      } else {
+        message.error('修改失败，原因：' + response.msg);
       }
-      let mode: 'inline' | 'horizontal' = 'inline';
-      const { offsetWidth } = dom.current;
-      if (dom.current.offsetWidth < 641 && offsetWidth > 400) {
-        mode = 'horizontal';
-      }
-      if (window.innerWidth < 768 && offsetWidth > 400) {
-        mode = 'horizontal';
-      }
-      setInitConfig({ ...initConfig, mode: mode as SettingsState['mode'] });
+    })
+    .catch(function(error) {
+      console.log(error);
     });
   };
 
-  useLayoutEffect(() => {
-    if (dom.current) {
-      window.addEventListener('resize', resize);
-      resize();
-    }
-    return () => {
-      window.removeEventListener('resize', resize);
-    };
-  }, [dom.current]);
-
-  const getMenu = () => {
-    return Object.keys(menuMap).map((item) => (
-      <Item key={item}>{menuMap[item]}</Item>
-    ));
+  const onFinishFailed = (errorInfo: any) => {
+    console.log('Failed:', errorInfo);
   };
 
-  const renderChildren = () => {
-    const { selectKey } = initConfig;
-    switch (selectKey) {
-      case 'base':
-        return <BaseView />;
-      case 'security':
-        return <SecurityView />;
-      case 'binding':
-        return <BindingView />;
-      case 'notification':
-        return <NotificationView />;
-      default:
-        return null;
-    }
-  };
+  // loading={loading}
 
   return (
     <GridContent>
-      <div
-        className={styles.main}
-        ref={(ref) => {
-          if (ref) {
-            dom.current = ref;
+      <Row gutter={24}>
+        <Col lg={16} md={24}>
+          <Card bordered={false} style={{ marginBottom: 24 }} >
+            <h1>设置</h1>
+            {/* {!loading && currentUser && ( */}
+            {initialState.currentUser ? (
+              <div>
+                <Form
+                  name="basic"
+                  labelCol={{ span: 8 }}
+                  wrapperCol={{ span: 16 }}
+                  initialValues={{ remember: true, name: initialState.currentUser.name }}
+                  onFinish={onFinish}
+                  onFinishFailed={onFinishFailed}
+                  autoComplete="off"
+                >
+                  <Form.Item
+                    label="当前昵称"
+                    name="name"
+                  >
+                    <Input disabled />
+                  </Form.Item>
+
+                  <Form.Item
+                    label="新昵称"
+                    name="new_name"
+                    rules={[{ required: true, message: 'Please input your new nickname!' }]}
+                  >
+                    <Input />
+                  </Form.Item>
+
+                  <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+                    <Button type="primary" htmlType="submit">
+                      提交
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </div>
+            )
+            :
+            <span>请先登录！</span>
           }
-        }}
-      >
-        <div className={styles.leftMenu}>
-          <Menu
-            mode={initConfig.mode}
-            selectedKeys={[initConfig.selectKey]}
-            onClick={({ key }) => {
-              setInitConfig({
-                ...initConfig,
-                selectKey: key as SettingsStateKeys,
-              });
-            }}
-          >
-            {getMenu()}
-          </Menu>
-        </div>
-        <div className={styles.right}>
-          <div className={styles.title}>{menuMap[initConfig.selectKey]}</div>
-          {renderChildren()}
-        </div>
-      </div>
+          </Card>
+        </Col>
+      </Row>
     </GridContent>
   );
 };
-export default Settings;
+export default Center;

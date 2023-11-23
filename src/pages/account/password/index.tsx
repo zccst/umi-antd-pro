@@ -8,7 +8,7 @@ import { GridContent } from '@ant-design/pro-components';
 import { Avatar, Card, Col, Divider, Input, Row, Form, Button, message, Tag } from 'antd';
 import React, { useRef, useState, useCallback } from 'react';
 import type { RouteChildrenProps } from 'react-router';
-import { Link, useRequest, history, useModel } from 'umi';
+import { Link, useRequest, history, useModel, useAccess } from 'umi';
 import { stringify } from 'querystring';
 import styles from './password.less';
 import type { CurrentUser, tabKeyType, TagType } from '../center/data';
@@ -22,6 +22,11 @@ import { LOGINPATH } from '../../../utils/constant';
 const Center: React.FC<RouteChildrenProps> = () => {
   const [tabKey, setTabKey] = useState<tabKeyType>('articles');
   const { initialState, setInitialState } = useModel('@@initialState');
+
+
+  console.log(history, useModel, useAccess);
+  const access = useAccess();
+  console.log(access.canAdmin ? '管理员' : '普通用户');
 
   //  获取用户信息
   // const { data: currentUser, loading } = useRequest(() => {

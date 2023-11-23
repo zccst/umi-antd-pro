@@ -10,6 +10,7 @@ export default defineConfig({
   model: {},
   antd: {},
   request: {},
+  access: {}, // 开启
   initialState: {},
   mock: {
     include: ['src/pages/**/_mock.ts'],
@@ -282,18 +283,25 @@ export default defineConfig({
           icon: 'smile',
           path: '/account/center',
           component: '@/pages/account/center',
-        },
+        },*/
         {
           name: 'settings',
           icon: 'smile',
           path: '/account/settings',
           component: './account/settings',
-        },*/
+        },
         {
           name: 'password',
           icon: 'smile',
           path: '/account/password',
           component: './account/password',
+        },
+        {
+          name: 'users',
+          icon: 'smile',
+          access: 'canAdmin',
+          path: '/account/users',
+          component: './account/users',
         },
       ],
     },
@@ -325,11 +333,18 @@ export default defineConfig({
           component: './contract/call/address',
         },
         {
+          name: 'chain',
+          icon: 'smile',
+          path: '/contract/chain',
+          component: './contract/call/chain',
+        },
+        {
           name: 'project',
           icon: 'smile',
           path: '/contract/project',
           component: './contract/call/project',
-        }
+        },
+        
       ],
     },
     {

@@ -18,6 +18,12 @@ export const addrUrlPrefix = rootURL + "/addr"; // address管理页的URL前缀
 // 项目管理页
 export const projUrlPrefix = rootURL + "/project"; // create / delete / access_list / update
 
+// 链管理
+export const chainUrlPrefix = rootURL + "/chain"; // create / delete / access_list / update
+
+// 用户管理
+export const userUrlPrefix = rootURL + "/users"; // create / delete / access_list / update
+
 export const LOGINPATH = '/user/login';
 
 // 公链列表
