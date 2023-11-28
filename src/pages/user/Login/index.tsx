@@ -22,6 +22,9 @@ import { FormattedMessage, history, SelectLang, useIntl, useModel } from 'umi';
 import styles from './index.less';
 import { LOGINPATH } from '../../../utils/constant'
 
+import { getChains } from '@/services/ant-design-pro/api';
+
+
 const LoginMessage: React.FC<{
   content: string;
 }> = ({ content }) => (
@@ -62,6 +65,21 @@ const Login: React.FC = () => {
         window.localStorage.setItem('token', response.data.token);
 
         await fetchUserInfo(); // 获取用户信息需要token
+
+        const result = await getChains();
+        let finalChain = [];
+        if ( result.code === 0) {
+            console.log('login page getChains', result.data);
+            finalChain = result.data.map((item: any) => {
+                return {
+                    id: item.chain_id,
+                    token: item.token,
+                    label: item.name,
+                    rpcUrl: item.rpc,
+                }
+            });
+        }
+        localStorage.setItem('GLOBAL_CHAINS', JSON.stringify(finalChain));
         
         const defaultLoginSuccessMessage = intl.formatMessage({
           id: 'pages.login.success',

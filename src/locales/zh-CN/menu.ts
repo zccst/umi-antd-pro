@@ -11,7 +11,7 @@ export default {
   'menu.contract.call': '合约调用',
   'menu.contract.abi': 'abi管理',
   'menu.contract.address': '地址管理',
-  'menu.contract.project': '项目管理',
+  'menu.contract.project': '合约项目管理',
   'menu.contract.chain': '链管理',
   'menu.dashboard': 'Dashboard',
   'menu.dashboard.analysis': '分析页',

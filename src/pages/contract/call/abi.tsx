@@ -461,7 +461,7 @@ const Abi: React.FC = () => {
       {
         title: '名称',
         dataIndex: 'name',
-        copyable: true,
+        // copyable: true,
         ellipsis: true,
         // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置

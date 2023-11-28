@@ -10,9 +10,12 @@ import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
 import { chainUrlPrefix, LOGINPATH } from '../../../utils/constant'
 
+import { getChains } from '@/services/ant-design-pro/api';
+
 type ChainItem = {
     id: number;
     name: string;
+    token: string;
     chain_id: number;
     create_time: string;
     update_time: string;
@@ -43,6 +46,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   } : {
     chain_id: '',
     name: "",
+    token: "",
     rpc: "",
     explorer_url: "",
   }
@@ -97,6 +101,14 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           <Input placeholder="如X1 Testnet" />
         </Form.Item>
 
+        <Form.Item
+          name="token"
+          label="Token"
+          rules={[{ required: true, message: '请输入Token名称！' }]}
+        >
+          <Input placeholder="请输入大写字母，如ETH" />
+        </Form.Item>
+
         <Form.Item 
           label="链id"
           name="chain_id"
@@ -116,7 +128,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         <Form.Item
           name="explorer_url"
           label="浏览器URL"
-          rules={[{ required: true, message: '请输入浏览器URL！' }]}
+          // rules={[{ required: true, message: '请输入浏览器URL！' }]}
         >
           <Input placeholder="https开头" />
         </Form.Item>
@@ -147,6 +159,7 @@ const ChainManage: React.FC = () => {
       };
       const newParam = {  
         name: values['name'],
+        token: values['token'].toUpperCase(),
         chain_id: values['chain_id'],
         rpc: values['rpc'],
         explorer_url: values['explorer_url'],
@@ -154,6 +167,7 @@ const ChainManage: React.FC = () => {
       const editParam = {
         id: values['id'],
         name: values['name'],
+        token: values['token'].toUpperCase(),
         chain_id: values['chain_id'],
         rpc: values['rpc'],
         explorer_url: values['explorer_url'],
@@ -171,7 +185,8 @@ const ChainManage: React.FC = () => {
             type: 'success',
             content: '提交成功！',
           });
-          actionRef.current?.reload();
+          window.location.reload();
+          // actionRef.current?.reload();
         } else if (response.code === 403) {
           //TODO
           message.error('登录已超时，请重新登录。');
@@ -219,6 +234,23 @@ const ChainManage: React.FC = () => {
       });
     };
 
+    const updateLocalStorageChains = async () => {
+      const result = await getChains();
+      let finalChain = [];
+      if ( result.code === 0) {
+          console.log('chain manage page getChains', result.data);
+          finalChain = result.data.map((item: any) => {
+              return {
+                  id: item.chain_id,
+                  token: item.token,
+                  label: item.name,
+                  rpcUrl: item.rpc,
+              }
+          });
+      }
+      localStorage.setItem('GLOBAL_CHAINS', JSON.stringify(finalChain));
+    }
+
     // 表格的列
     const columns: ProColumns<ChainItem>[] = [
       // {
@@ -256,7 +288,13 @@ const ChainManage: React.FC = () => {
         },
       },
       {
-        title: '链id (0x)',
+        title: 'token',
+        key: 'token',
+        dataIndex: 'token',
+        hideInSearch: true, // 在查询表单中不展示此项
+      },
+      {
+        title: '链id',
         key: 'chain_id',
         dataIndex: 'chain_id',
         hideInSearch: true, // 在查询表单中不展示此项
@@ -360,6 +398,8 @@ const ChainManage: React.FC = () => {
                     // 不传会使用 data 的长度，如果是分页一定要传
                     total: ret.data.total,
                   }
+
+                  updateLocalStorageChains();
 
                   return Promise.resolve(res);
               }}

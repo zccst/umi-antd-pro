@@ -56,6 +56,20 @@ export async function changePassword(
   });
 }
 
+/** 获取当前的链列表 GET /api/currentUser */
+export async function getChains(options?: { [key: string]: any }) {
+  return request<{
+    data: API.Chain;
+  }>(hostURL + '/api/v1/chain/list', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'token': window.localStorage.getItem('token') || ''
+    },
+    ...(options || {}),
+  });
+}
+
 /** 此处后端没有提供注释 GET /api/notices */
 export async function getNotices(options?: { [key: string]: any }) {
   return request<API.NoticeIconList>('/api/notices', {

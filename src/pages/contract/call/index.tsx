@@ -204,7 +204,7 @@ const Call: React.FC = () => {
         // TODO
 
         // 查看当前的链，与钱包中的链是否一致。如果不一致，则提示切换至与用户选择的链一致。
-        const selectChainId = '0x' + currChainId;
+        const selectChainId = currChainId;
         console.log('检查链是否一致', connectedChain?.id, selectChainId, connectedChain?.id !== selectChainId);
         if (connectedChain?.id !== selectChainId) {
             setChain({ chainId: selectChainId });

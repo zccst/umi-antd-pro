@@ -224,7 +224,7 @@ const Address: React.FC = () => {
       {
         title: '合约名称',
         dataIndex: 'abi_name',
-        copyable: true,
+        // copyable: true,
         ellipsis: true,
         // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
@@ -272,7 +272,7 @@ const Address: React.FC = () => {
       {
         title: '地址Tag',
         dataIndex: 'tag',
-        copyable: true,
+        // copyable: true,
         ellipsis: true,
         // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
