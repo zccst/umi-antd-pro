@@ -66,7 +66,7 @@ const Center: React.FC<RouteChildrenProps> = () => {
       <Row gutter={24}>
         <Col lg={16} md={24}>
           <Card bordered={false} style={{ marginBottom: 24 }} >
-            <h1>设置</h1>
+            <h1>个人设置</h1>
             {/* {!loading && currentUser && ( */}
             {initialState.currentUser ? (
               <div>

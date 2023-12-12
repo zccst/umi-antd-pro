@@ -27,6 +27,16 @@ declare namespace API {
     phone?: string;
   };
 
+  type Chain = {
+    id: number; 
+    name: string;
+    chain_id: string;
+    rpc: string;
+    explorer_url: string;
+    update_time: string;
+    create_time: string;
+  };
+
   type LoginResult = {
     status?: string;
     type?: string;
