@@ -75,169 +75,7 @@ export default defineConfig({
       ],
     },
     /**
-     * 
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      icon: 'dashboard',
-      routes: [
-        {
-          path: '/dashboard',
-          redirect: '/dashboard/analysis',
-        },
-        {
-          name: 'analysis',
-          icon: 'smile',
-          path: '/dashboard/analysis',
-          component: './dashboard/analysis',
-        },
-        {
-          name: 'monitor',
-          icon: 'smile',
-          path: '/dashboard/monitor',
-          component: './dashboard/monitor',
-        },
-        {
-          name: 'workplace',
-          icon: 'smile',
-          path: '/dashboard/workplace',
-          component: './dashboard/workplace',
-        },
-      ],
-    },
-    {
-      path: '/form',
-      icon: 'form',
-      name: 'form',
-      routes: [
-        {
-          path: '/form',
-          redirect: '/form/basic-form',
-        },
-        {
-          name: 'basic-form',
-          icon: 'smile',
-          path: '/form/basic-form',
-          component: './form/basic-form',
-        },
-        {
-          name: 'step-form',
-          icon: 'smile',
-          path: '/form/step-form',
-          component: './form/step-form',
-        },
-        {
-          name: 'advanced-form',
-          icon: 'smile',
-          path: '/form/advanced-form',
-          component: './form/advanced-form',
-        },
-      ],
-    },
-    {
-      path: '/list',
-      icon: 'table',
-      name: 'list',
-      routes: [
-        {
-          path: '/list/search',
-          name: 'search-list',
-          component: './list/search',
-          routes: [
-            {
-              path: '/list/search',
-              redirect: '/list/search/articles',
-            },
-            {
-              name: 'articles',
-              icon: 'smile',
-              path: '/list/search/articles',
-              component: './list/search/articles',
-            },
-            {
-              name: 'projects',
-              icon: 'smile',
-              path: '/list/search/projects',
-              component: './list/search/projects',
-            },
-            {
-              name: 'applications',
-              icon: 'smile',
-              path: '/list/search/applications',
-              component: './list/search/applications',
-            },
-          ],
-        },
-        {
-          path: '/list',
-          redirect: '/list/table-list',
-        },
-        {
-          name: 'table-list',
-          icon: 'smile',
-          path: '/list/table-list',
-          component: './list/table-list',
-        },
-        {
-          name: 'basic-list',
-          icon: 'smile',
-          path: '/list/basic-list',
-          component: './list/basic-list',
-        },
-        {
-          name: 'card-list',
-          icon: 'smile',
-          path: '/list/card-list',
-          component: './list/card-list',
-        },
-      ],
-    },
-    {
-      path: '/profile',
-      name: 'profile',
-      icon: 'profile',
-      routes: [
-        {
-          path: '/profile',
-          redirect: '/profile/basic',
-        },
-        {
-          name: 'basic',
-          icon: 'smile',
-          path: '/profile/basic',
-          component: './profile/basic',
-        },
-        {
-          name: 'advanced',
-          icon: 'smile',
-          path: '/profile/advanced',
-          component: './profile/advanced',
-        },
-      ],
-    },
-    {
-      name: 'result',
-      icon: 'CheckCircleOutlined',
-      path: '/result',
-      routes: [
-        {
-          path: '/result',
-          redirect: '/result/success',
-        },
-        {
-          name: 'success',
-          icon: 'smile',
-          path: '/result/success',
-          component: './result/success',
-        },
-        {
-          name: 'fail',
-          icon: 'smile',
-          path: '/result/fail',
-          component: './result/fail',
-        },
-      ],
-    },
+     *
     {
       name: 'exception',
       icon: 'warning',
@@ -344,7 +182,42 @@ export default defineConfig({
           path: '/contract/project',
           component: './contract/call/project',
         },
-        
+
+      ],
+    },
+    {
+      name: 'new-deploy',
+      icon: 'MenuUnfoldOutlined',
+      path: '/new-deploy',
+      routes: [
+        {
+          path: '/new-deploy',
+          redirect: '/new-deploy/task',
+        },
+        {
+          name: 'keystore',
+          icon: 'smile',
+          path: '/new-deploy/keystore',
+          component: './new-deploy/keystore',
+        },
+        {
+          name: 'keyless',
+          icon: 'smile',
+          path: '/new-deploy/keyless',
+          component: './new-deploy/keyless',
+        },
+        {
+          name: 'factory',
+          icon: 'smile',
+          path: '/new-deploy/factory',
+          component: './new-deploy/factory',
+        },
+        {
+          name: 'task',
+          icon: 'smile',
+          path: '/new-deploy/task',
+          component: './new-deploy/task',
+        },
       ],
     },
     {
