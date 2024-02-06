@@ -16,7 +16,7 @@ export default {
   'menu.new-deploy': '新合约发布',
   'menu.new-deploy.keystore': 'keystore管理',
   'menu.new-deploy.keyless': 'keyless初始化',
-  'menu.new-deploy.factory': '工厂合约初始化',
+  'menu.new-deploy.factory': '业务工厂初始化',
   'menu.new-deploy.task': '合约发布任务',
   'menu.dashboard': 'Dashboard',
   'menu.dashboard.analysis': '分析页',

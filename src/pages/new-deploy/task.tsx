@@ -1,37 +1,64 @@
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
-import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, message, Tag } from 'antd';
+import { Button, Form, Input, Modal, Spin, Radio, Space, Select, Checkbox, Popconfirm, Tooltip, message, Tag, Row, Col } from 'antd';
+import type { RadioChangeEvent } from 'antd';
+import type { CheckboxValueType } from 'antd/es/checkbox/Group';
 import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
-import { history, Link } from 'umi';
+import { history, useModel, Link } from 'umi';
 import request from '../../utils/req';
-import { chainUrlPrefix, LOGINPATH } from '../../utils/constant'
+import { create2UrlPrefix, chainUrlPrefix, LOGINPATH } from '../../utils/constant'
 
-import { getChains } from '@/services/ant-design-pro/api';
 
-type ChainItem = {
+type TaskItem = {
     id: number;
     name: string;
-    token: string;
-    chain_id: number;
+    keystore_id: number;
+    keystore_name: string;
+    network_names: [];
+    success: number;
+    failed: number;
+    salt: string;
+    init_code: string;
+    data: string;
+    create2_forward_value: number;
+    call_forward_value: number;
+    user_id: number;
+    username: string;
+    department_id: number;
+    department_name: string;
+    contract_addr: string;
+    log: [];
     create_time: string;
     update_time: string;
+    status: number;
 };
+
+type departmentItem = {
+  id: number;
+  name: string;
+}
 
 interface CollectionCreateFormProps {
   open: boolean;
+  isSpinning: boolean;
   confirmLoading: boolean;
+  chainlistOptions: string[]; // 新知识点
+  departmentList: departmentItem[]; // 新知识点
   extraObj: {[key: string]: any};
-  onCreate: (type: string, values: ChainItem) => void;
+  onCreate: (type: string, values: TaskItem) => void;
   onCancel: () => void;
 }
 
 
 const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   open,
+  isSpinning,
+  chainlistOptions,
   confirmLoading,
   extraObj,
+  departmentList,
   onCreate,
   onCancel,
 }) => {
@@ -40,13 +67,21 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 
   const defaultV = (extraObj.type === 'edit') ? { // 'edit'
     ...extraObj.item,
-    chain_id: '' + extraObj.item.chain_id,
+    network_ids: extraObj.item.network_ids.map((item: any) => {
+      return item = '' + item
+    }),
   } : {
-    chain_id: '',
     name: "",
-    token: "",
-    rpc: "",
-    explorer_url: "",
+    salt: "",
+    init_code: "",
+    data: "",
+    create2_forward_value: "0",
+    call_forward_value: "0",
+    factory_addr: "",
+    network_ids: [],
+    department_id: (departmentList && departmentList.length) ? departmentList[0].id : '',
+    // network_ids: ['1', '2'],
+    // department_id: 2,
   }
   // extraObj.deptFormOptions[0]是全部
   console.log('defaultV', extraObj, defaultV);
@@ -59,6 +94,14 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
     form.resetFields();
     onCancel();
   }
+
+  const onCKChange = (checkedValues: CheckboxValueType[]) => {
+    console.log('checked = ', checkedValues);
+  };
+  const onDepartmentChange = ({ target: { value } }: RadioChangeEvent) => {
+    console.log('radio1 checked', value);
+    // setValue1(value);
+  };
 
   return (
     <Modal
@@ -79,59 +122,105 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           });
       }}
     >
-      <Form
-        form={form}
-        layout="horizontal"
-        labelCol={{ span: 3 }}
-        wrapperCol={{ span: 19 }}
-        name="form_in_modal"
-        // initialValues={defaultV}
-      >
-        <Form.Item hidden={true} name="id"><Input /></Form.Item>
-        <Form.Item hidden={true} name="create_time"><Input /></Form.Item>
-        <Form.Item hidden={true} name="update_time"><Input /></Form.Item>
-
-        <Form.Item
-          name="name"
-          label="链名称"
-          rules={[{ required: true, message: '请输入链名称！' }]}
+      <Spin spinning={isSpinning}>
+        <Form
+          form={form}
+          layout="horizontal"
+          labelCol={{ span: 6 }}
+          wrapperCol={{ span: 16 }}
+          name="form_in_modal"
+          // initialValues={{
+          //   'checkbox-group': ['Apple', 'Pear'],
+          // }}
         >
-          <Input placeholder="如X1 Testnet" />
-        </Form.Item>
+          <Form.Item hidden={true} name="id"><Input /></Form.Item>
 
-        <Form.Item
-          name="token"
-          label="Token"
-          rules={[{ required: true, message: '请输入Token名称！' }]}
-        >
-          <Input placeholder="请输入大写字母，如ETH" />
-        </Form.Item>
+          <Form.Item
+            name="name"
+            label="任务名称"
+            rules={[{ required: true, message: '请输入任务名称！' }]}
+          >
+            <Input placeholder="请输入任务名称" />
+          </Form.Item>
 
-        <Form.Item
-          label="链id"
-          name="chain_id"
-          rules={[{ required: true, message: '请输入链id，十六进制数据！' }]}
-        >
-          <Input placeholder="请输入0x开头的16进制，或10进制。如0xc3或195" />
-        </Form.Item>
+          <Form.Item
+            name="salt"
+            label="salt"
+            rules={[{ required: true, message: '请输入salt！' }]}
+          >
+            <Input placeholder="请输入salt" />
+          </Form.Item>
 
-        <Form.Item
-          name="rpc"
-          label="rpc地址"
-          rules={[{ required: true, message: '请输入rpc地址！' }]}
-        >
-          <Input placeholder="https开头" />
-        </Form.Item>
+          <Form.Item
+            label="init_code"
+            name="init_code"
+            rules={[{ required: true, message: '请输入init_code！' }]}
+          >
+            <Input placeholder="请输入init_code" />
+          </Form.Item>
 
-        <Form.Item
-          name="explorer_url"
-          label="浏览器URL"
-          // rules={[{ required: true, message: '请输入浏览器URL！' }]}
-        >
-          <Input placeholder="https开头" />
-        </Form.Item>
+          <Form.Item
+            name="data"
+            label="data"
+            // rules={[{ required: true, message: '请输入data！' }]}
+          >
+            <TextArea rows={4} />
+          </Form.Item>
 
-      </Form>
+          <Form.Item
+            name="create2_forward_value"
+            label="create2_forward_value"
+            // rules={[{ required: true, message: '请输入create2_forward_value！' }]}
+          >
+            <Input placeholder="请输入create2_forward_value，必须是数字" />
+          </Form.Item>
+
+          <Form.Item
+            name="call_forward_value"
+            label="call_forward_value"
+            // rules={[{ required: true, message: '请输入call_forward_value！' }]}
+          >
+            <Input placeholder="请输入call_forward_value，必须是数字" />
+          </Form.Item>
+
+          <Form.Item
+            name="factory_addr"
+            label="factory_addr"
+            rules={[{ required: true, message: '请输入factory_addr！' }]}
+          >
+            <Input placeholder="请输入factory_addr" />
+          </Form.Item>
+
+          <Form.Item
+            name="network_ids"
+            label="network_ids"
+            rules={[{ required: true, message: '请输入要部署的链！' }]}
+          >
+            <Checkbox.Group 
+              disabled={extraObj.type === 'edit' ? true : false} 
+              options={chainlistOptions} 
+              onChange={onCKChange} 
+              />
+          </Form.Item>
+
+          <Form.Item
+            name="department_id"
+            label="所属部门"
+            rules={[{ required: true, message: '请选择任务所在的部门！' }]}
+          >
+            <Radio.Group 
+              disabled={extraObj.type === 'edit' ? true : false}
+              options={departmentList.map((item: any) => {
+                return {
+                  label: item.name,
+                  value: item.id,
+                }
+              })} 
+              onChange={onDepartmentChange} 
+              />
+          </Form.Item>
+        </Form>
+      </Spin>
     </Modal>
   );
 };
@@ -140,77 +229,89 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 
 const Task: React.FC = () => {
     const actionRef = useRef<ActionType>();
+    const { initialState } = useModel('@@initialState');
     const [messageApi, contextHolder] = message.useMessage();
 
     const [open, setOpen] = useState(false);
-    // const [modalItem, setModalItem] = useState<{[key: string]: any}>({});
+    const [spinning, setSpinning] = useState(false);
+    const [chainlistOptions, setChainlistOptions] = useState<string[]>([]); // <{[key: string]: any}>
     const [extraObj, setExtraObj] = useState({type: '', item: {}});
     const [confirmLoading, setConfirmLoading] = useState(false);
 
+    const [form2] = Form.useForm();
+    const [confirmKeystoreLoading, setConfirmKeystoreLoading] = useState(false);
+    const [isKeystoreModalOpen, setIsKeystoreModalOpen] = useState(false);
+    const [isKeystoreSpinning, setIsKeystoreSpinning] = useState(false);
+    const [currKeystoreId, setCurrKeystoreId] = useState("");
+    const [myKeystoreArr, setMyKeystoreArr] = useState([]);
 
+
+    const getChainList = () => {
+      request
+        .get(chainUrlPrefix + '/list')
+        .then(function(response) {
+          if (response.code === 0) {
+            const data = response.data;
+            const targetArr = data.map((item: any) => {
+              return {
+                value: '' + item.id,
+                label: item.name,
+              }
+            });
+            setChainlistOptions(targetArr);
+            setSpinning(false)
+          } else if (response.code === 403) {
+            //TODO
+            message.error('登录已超时，请重新登录。');
+            history.push(LOGINPATH);
+          } else {
+              message.error("获取部门列表失败，原因：" + response.msg);
+          }
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+    }
+    useEffect(() => {
+      getChainList()
+    }, []);
 
     const onCreate = (type: any, values: any) => {
-      // console.log('Received values of form: ', values);
+      console.log('Received values of form: ', values);
       const urlObj: any = {
         'new': '/create',
         'edit': '/update',
       };
-      const newParam = {
+      const commParam = {
         name: values['name'],
-        token: values['token'].toUpperCase(),
-        chain_id: values['chain_id'],
-        rpc: values['rpc'],
-        explorer_url: values['explorer_url'],
+        salt: values['salt'],
+        init_code: values['init_code'],
+        data: values['data'],
+        create2_forward_value: +values['create2_forward_value'],
+        call_forward_value: +values['call_forward_value'],
+        factory_addr: values['factory_addr'],
+      }
+      const newParam = {
+        ...commParam,
+        network_ids: values['network_ids'].map((item: any) => {
+          return item = +item
+        }),
+        department_id: values['department_id']
       }
       const editParam = {
         id: values['id'],
-        name: values['name'],
-        token: values['token'].toUpperCase(),
-        chain_id: values['chain_id'],
-        rpc: values['rpc'],
-        explorer_url: values['explorer_url'],
+        ...commParam,
       }
       const param = (type === 'new') ? newParam : editParam;
       console.log(param, values);
       // return;
       setConfirmLoading(true);
-      request.post(`${chainUrlPrefix}${urlObj[type]}`, {
+      request.post(`${create2UrlPrefix}/task${urlObj[type]}`, {
         data: param,
       })
       .then(function(response) {
         if (response.code === 0) {
-          messageApi.open({
-            type: 'success',
-            content: '提交成功！',
-          });
-          window.location.reload();
-          // actionRef.current?.reload();
-        } else if (response.code === 403) {
-          //TODO
-          message.error('登录已超时，请重新登录。');
-          history.push(LOGINPATH);
-        } else {
-          messageApi.open({
-            type: 'error',
-            content: '提交失败，原因：' + response.msg,
-          });
-        }
-        setOpen(false);
-        setConfirmLoading(false);
-      })
-      .catch(function(error) {
-        console.log(error);
-        setConfirmLoading(false);
-      });
-    };
-
-    const handleDelete = (key: React.Key) => {
-      console.log('handleDelete', key);
-      request.post(`${chainUrlPrefix}/delete`, {
-        data: { id : key},
-      })
-      .then(function(response) {
-        if (response.code === 0) {
+          setOpen(false);
           messageApi.open({
             type: 'success',
             content: '提交成功！',
@@ -226,50 +327,97 @@ const Task: React.FC = () => {
             content: '提交失败，原因：' + response.msg,
           });
         }
+        setConfirmLoading(false);
       })
       .catch(function(error) {
         console.log(error);
+        setConfirmLoading(false);
       });
     };
 
-    const updateLocalStorageChains = async () => {
-      const result = await getChains();
-      let finalChain = [];
-      if ( result.code === 0) {
-          console.log('chain manage page getChains', result.data);
-          finalChain = result.data.map((item: any) => {
-              return {
-                  id: item.chain_id,
-                  token: item.token,
-                  label: item.name,
-                  rpcUrl: item.rpc,
-              }
+
+    // 初始化
+  const handleKeystoreOk = () => {
+    setConfirmLoading(true)
+    form2
+      .validateFields()
+      .then((values) => {
+        form2.resetFields()
+        console.log('参数values：', values)
+        request.post(`${create2UrlPrefix}/task/run`, {
+          data: { 
+            network_id : +values.network_id,
+            keystore_id : +values.keystore_id,
+            password : values.password,
+          },
+        })
+          .then(function(response) {
+            setConfirmLoading(false)
+            setIsKeystoreModalOpen(false);
+            if (response.code === 0) {
+              messageApi.open({ type: 'success', content: '提交成功！' });
+              actionRef.current?.reload()
+            } else if (response.code === 403) {
+              //TODO
+              message.error('登录已超时，请重新登录。');
+              history.push(LOGINPATH);
+            } else {
+              messageApi.open({ type: 'error', content: '提交失败，原因：' + response.msg });
+            }
+          })
+          .catch(function(error) {
+            console.log(error);
           });
+      })
+      .catch((info) => {
+        console.log('Validate Failed:', info);
+      });
+
+    
+    
+  };
+
+  const handleKeystoreCancel = () => {
+    setIsKeystoreModalOpen(false);
+  };
+
+  const onKeystoreSelect = (selected: any) => {
+    setCurrKeystoreId(selected);
+  }
+
+  const doRun = (key: React.Key) => {
+    console.log('do task run', key);
+    setIsKeystoreModalOpen(true)
+    setIsKeystoreSpinning(true)
+    request.get(`${create2UrlPrefix}/keystore/list?current=1`).then(function(response) {
+      if (response.code === 0) {
+        const arr = response.data.list
+        setMyKeystoreArr(arr)
+        setIsKeystoreSpinning(false)
+        setTimeout(() => {
+          form2.setFieldsValue({ 
+            network_id: key,
+            keystore_id: (arr && arr.length) ? arr[0].id : ''
+          });
+        }, 10);
+      } else if (response.code === 403) {
+        //TODO
+        message.error('登录已超时，请重新登录。');
+        history.push(LOGINPATH);
+      } else {
+        messageApi.open({ type: 'error', content: '提交失败，原因：' + response.msg });
       }
-      localStorage.setItem('GLOBAL_CHAINS', JSON.stringify(finalChain));
-    }
+    })
+    .catch(function(error) {
+      console.log(error);
+    });
+    
+  };
 
     // 表格的列
-    const columns: ProColumns<ChainItem>[] = [
-      // {
-      //   title: 'ID',
-      //   dataIndex: 'id',
-      //   // copyable: true,
-      //   // ellipsis: true,
-      //   // tip: '名称过长会自动收缩',
-      //   // 传递给 Form.Item 的配置
-      //   hideInSearch: true, // 在查询表单中不展示此项
-      //   formItemProps: {
-      //     rules: [
-      //       {
-      //         required: true,
-      //         message: '此项为必填项',
-      //       },
-      //     ],
-      //   },
-      // },
+    const columns: ProColumns<TaskItem>[] = [
       {
-        title: '链名称',
+        title: '任务名称',
         key: 'name',
         dataIndex: 'name',
         copyable: true,
@@ -286,36 +434,43 @@ const Task: React.FC = () => {
         },
       },
       {
-        title: 'token',
-        key: 'token',
-        dataIndex: 'token',
+        title: '执行的链',
+        key: 'network_names',
+        dataIndex: 'network_names',
+        hideInSearch: true, // 在查询表单中不展示此项
+        render: (text, record, _, action)=> {
+          return record.network_names.join(',')
+        }
+      },
+      {
+        title: '发布人',
+        key: 'username',
+        dataIndex: 'username',
         hideInSearch: true, // 在查询表单中不展示此项
       },
       {
-        title: '链id',
-        key: 'chain_id',
-        dataIndex: 'chain_id',
+        title: '所属部门',
+        key: 'department_name',
+        dataIndex: 'department_name',
         hideInSearch: true, // 在查询表单中不展示此项
       },
       {
-        title: 'rpc地址',
-        key: 'rpc',
-        dataIndex: 'rpc',
-        hideInSearch: true, // 在查询表单中不展示此项
-      },
-      {
-        title: '浏览器URL',
-        key: 'explorer_url',
-        dataIndex: 'explorer_url',
-        hideInSearch: true, // 在查询表单中不展示此项
-      },
-      {
-        title: '最后修改时间',
-        key: 'update_time',
-        dataIndex: 'update_time',
+        title: '创建时间',
+        key: 'create_time',
+        dataIndex: 'create_time',
         valueType: 'date',
         sorter: true,
         hideInSearch: true, // 在查询表单中不展示此项
+      },
+      {
+        title: '状态',
+        key: 'status',
+        dataIndex: 'status',
+        hideInSearch: true, // 在查询表单中不展示此项
+        render: (text, record, _, action)=> {
+          const status = +record.status
+          return status === 1 ? '未开始' : (status === 2 ? '进行中' : (status === 3 ? '成功' : '失败'))
+        }
       },
       {
         title: '最后修改时间',
@@ -347,9 +502,16 @@ const Task: React.FC = () => {
           }}>
             编辑
           </a>,
-          <Popconfirm key="delete" title="确定要删除吗" onConfirm={() => handleDelete(record.id)}>
-            <a>删除</a>
-          </Popconfirm>,
+          +record.status === 1 ?
+          <a key='run' onClick={() => doRun(record.id)}>
+            运行
+          </a> : (+record.status === 4 && +record.failed > 0) ?
+          <a key='rerun' onClick={() => doRun(record.id)}>
+            重试
+          </a> : null,
+          <a key='log' onClick={() => doRun(record.id)}>
+            查看日志
+          </a>
         ],
       },
     ];
@@ -357,7 +519,7 @@ const Task: React.FC = () => {
     return <GridContent>
         <>
             {contextHolder}
-            <ProTable<ChainItem>
+            <ProTable<TaskItem>
               columns={columns}
               actionRef={actionRef} // Table action 的引用，便于自定义触发
               cardBordered  // Table 和 Search 外围 Card 组件的边框
@@ -365,8 +527,8 @@ const Task: React.FC = () => {
                   console.log('params', params, sort, filter);
                   let ret: any = {};
                   await request<{
-                      data: ChainItem[];
-                  }>(`${chainUrlPrefix}/access_list`, {
+                      data: TaskItem[];
+                  }>(`${create2UrlPrefix}/task/list`, {
                     params,
                   }).then(r => ret = r);
 
@@ -377,10 +539,7 @@ const Task: React.FC = () => {
                     message.error('登录已超时，请重新登录。');
                     history.push(LOGINPATH);
                   } else if (ret.code !== 0) {
-                    messageApi.open({
-                      type: 'error',
-                      content: '获取链列表失败，原因：' + ret.msg,
-                    });
+                    messageApi.open({ type: 'error', content: '获取链列表失败，原因：' + ret.msg });
                     return Promise.resolve({
                       data: [],
                       success: false,
@@ -396,8 +555,6 @@ const Task: React.FC = () => {
                     // 不传会使用 data 的长度，如果是分页一定要传
                     total: ret.data.total,
                   }
-
-                  updateLocalStorageChains();
 
                   return Promise.resolve(res);
               }}
@@ -464,11 +621,15 @@ const Task: React.FC = () => {
                       icon={<PlusOutlined />}
                       onClick={() => {
                           // actionRef.current?.reload();
-                          setOpen(true);
+                          setOpen(true)
+                          setSpinning(true)
                           setExtraObj({
                             type: 'new',
-                            item: {},
+                            item: {
+                              
+                            },
                           });
+                          getChainList()
                       }}
                       type="primary"
                   >
@@ -480,7 +641,10 @@ const Task: React.FC = () => {
 
             <CollectionCreateForm
               open={open}
+              isSpinning={spinning}
+              chainlistOptions={chainlistOptions}
               confirmLoading={confirmLoading}
+              departmentList={initialState.currentUser.depts}
               extraObj={extraObj}
               onCreate={onCreate}
               onCancel={() => {
@@ -488,6 +652,44 @@ const Task: React.FC = () => {
               }}
             />
 
+            <Modal title="输入Keystore助记密码" width={600} confirmLoading={confirmKeystoreLoading} open={isKeystoreModalOpen} onOk={handleKeystoreOk} onCancel={handleKeystoreCancel}>
+              <Spin spinning={isKeystoreSpinning}>
+                <Form
+                  form={form2}
+                  layout="horizontal"
+                  labelCol={{ span: 7 }}
+                  wrapperCol={{ span: 15 }}
+                  name="form_in_modal"
+                  // initialValues={defaultV}
+                >
+                  <Form.Item hidden={true} name="network_id"><Input /></Form.Item>
+                  <Form.Item
+                    name="keystore_id"
+                    label="选择Keystore"
+                    rules={[{ required: true, message: '请选择Keystore！' }]}
+                  >
+                    <Select 
+                      onSelect={onKeystoreSelect}
+                      options={myKeystoreArr.map((item: any) => {
+                        return {
+                          value: item.id,
+                          label: item.name,
+                        }
+                      })}
+                      value={currKeystoreId}
+                    >
+                    </Select>
+                  </Form.Item>
+                  <Form.Item
+                    name="password"
+                    label="助记密码"
+                    rules={[{ required: true, message: '请输入助记密码！' }]}
+                  >
+                    <Input.Password placeholder="助记密码" />
+                  </Form.Item>
+                </Form>
+              </Spin>
+            </Modal>
         </>
     </GridContent>;
 };
