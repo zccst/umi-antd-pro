@@ -44,6 +44,40 @@ export default defineConfig({
   // umi routes: https://umijs.org/docs/routing
   routes: [
     {
+      name: 'dashboard',
+      icon: 'InboxOutlined',
+      path: '/dashboard',
+      routes: [
+        {
+          path: '/dashboard',
+          redirect: '/dashboard/workplace',
+        },
+        {
+          name: 'workplace',
+          icon: 'smile',
+          path: '/dashboard/workplace',
+          component: './dashboard/workplace',
+        },
+      ],
+    },
+    {
+      name: 'common-module',
+      icon: 'TeamOutlined',
+      path: '/common-module',
+      routes: [
+        {
+          path: '/common-module',
+          redirect: '/common-module/chain',
+        },
+        {
+          name: 'chain',
+          icon: 'smile',
+          path: '/common-module/chain',
+          component: './common-module/chain',
+        },
+      ],
+    },
+    {
       path: '/user',
       layout: false,
       routes: [
@@ -74,6 +108,7 @@ export default defineConfig({
         },
       ],
     },
+    
     /**
      *
     {
@@ -106,6 +141,83 @@ export default defineConfig({
       ],
     },
      */
+    
+    {
+      name: 'contract',
+      icon: 'MenuUnfoldOutlined',
+      path: '/contract',
+      routes: [
+        {
+          path: '/contract',
+          redirect: '/contract/call',
+        },
+        {
+          name: 'project',
+          icon: 'smile',
+          path: '/contract/project',
+          component: './contract/call/project',
+        },
+        {
+          name: 'abi',
+          icon: 'smile',
+          path: '/contract/abi',
+          component: './contract/call/abi',
+        },
+        {
+          name: 'address',
+          icon: 'smile',
+          path: '/contract/address',
+          component: './contract/call/address',
+        },
+        // {
+        //   name: 'chain',
+        //   icon: 'smile',
+        //   path: '/contract/chain',
+        //   component: './contract/call/chain',
+        // },
+        {
+          name: 'call',
+          icon: 'smile',
+          path: '/contract/call',
+          component: './contract/call',
+        },
+      ],
+    },
+    {
+      name: 'new-deploy',
+      icon: 'DeploymentUnitOutlined',
+      path: '/new-deploy',
+      routes: [
+        {
+          path: '/new-deploy',
+          redirect: '/new-deploy/task',
+        },
+        {
+          name: 'keystore',
+          icon: 'smile',
+          path: '/new-deploy/keystore',
+          component: './new-deploy/keystore',
+        },
+        {
+          name: 'keyless',
+          icon: 'smile',
+          path: '/new-deploy/keyless',
+          component: './new-deploy/keyless',
+        },
+        {
+          name: 'factory',
+          icon: 'smile',
+          path: '/new-deploy/factory',
+          component: './new-deploy/factory',
+        },
+        {
+          name: 'task',
+          icon: 'smile',
+          path: '/new-deploy/task',
+          component: './new-deploy/task',
+        },
+      ],
+    },
     {
       name: 'account',
       icon: 'user',
@@ -144,85 +256,8 @@ export default defineConfig({
       ],
     },
     {
-      name: 'contract',
-      icon: 'MenuUnfoldOutlined',
-      path: '/contract',
-      routes: [
-        {
-          path: '/contract',
-          redirect: '/contract/call',
-        },
-        {
-          name: 'call',
-          icon: 'smile',
-          path: '/contract/call',
-          component: './contract/call',
-        },
-        {
-          name: 'abi',
-          icon: 'smile',
-          path: '/contract/abi',
-          component: './contract/call/abi',
-        },
-        {
-          name: 'address',
-          icon: 'smile',
-          path: '/contract/address',
-          component: './contract/call/address',
-        },
-        {
-          name: 'chain',
-          icon: 'smile',
-          path: '/contract/chain',
-          component: './contract/call/chain',
-        },
-        {
-          name: 'project',
-          icon: 'smile',
-          path: '/contract/project',
-          component: './contract/call/project',
-        },
-
-      ],
-    },
-    {
-      name: 'new-deploy',
-      icon: 'MenuUnfoldOutlined',
-      path: '/new-deploy',
-      routes: [
-        {
-          path: '/new-deploy',
-          redirect: '/new-deploy/task',
-        },
-        {
-          name: 'keystore',
-          icon: 'smile',
-          path: '/new-deploy/keystore',
-          component: './new-deploy/keystore',
-        },
-        {
-          name: 'keyless',
-          icon: 'smile',
-          path: '/new-deploy/keyless',
-          component: './new-deploy/keyless',
-        },
-        {
-          name: 'factory',
-          icon: 'smile',
-          path: '/new-deploy/factory',
-          component: './new-deploy/factory',
-        },
-        {
-          name: 'task',
-          icon: 'smile',
-          path: '/new-deploy/task',
-          component: './new-deploy/task',
-        },
-      ],
-    },
-    {
       path: '/',
-      redirect: '/contract/call',
+      redirect: '/dashboard',
     },
     {
       component: '404',

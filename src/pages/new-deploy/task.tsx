@@ -29,7 +29,7 @@ type TaskItem = {
     department_id: number;
     department_name: string;
     contract_addr: string;
-    log: [];
+    log: object[];
     create_time: string;
     update_time: string;
     status: number;
@@ -232,18 +232,25 @@ const Task: React.FC = () => {
     const { initialState } = useModel('@@initialState');
     const [messageApi, contextHolder] = message.useMessage();
 
+    // task new / edit
     const [open, setOpen] = useState(false);
     const [spinning, setSpinning] = useState(false);
     const [chainlistOptions, setChainlistOptions] = useState<string[]>([]); // <{[key: string]: any}>
     const [extraObj, setExtraObj] = useState({type: '', item: {}});
     const [confirmLoading, setConfirmLoading] = useState(false);
 
+    // input keystore before run task
     const [form2] = Form.useForm();
     const [confirmKeystoreLoading, setConfirmKeystoreLoading] = useState(false);
     const [isKeystoreModalOpen, setIsKeystoreModalOpen] = useState(false);
     const [isKeystoreSpinning, setIsKeystoreSpinning] = useState(false);
-    const [currKeystoreId, setCurrKeystoreId] = useState("");
     const [myKeystoreArr, setMyKeystoreArr] = useState([]);
+
+    const [runType, setRunType] = useState("run");
+
+    // show log
+    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+    const [logArr, setLogArr] = useState([]);
 
 
     const getChainList = () => {
@@ -310,6 +317,7 @@ const Task: React.FC = () => {
         data: param,
       })
       .then(function(response) {
+        setConfirmLoading(false);
         if (response.code === 0) {
           setOpen(false);
           messageApi.open({
@@ -327,7 +335,6 @@ const Task: React.FC = () => {
             content: '提交失败，原因：' + response.msg,
           });
         }
-        setConfirmLoading(false);
       })
       .catch(function(error) {
         console.log(error);
@@ -338,21 +345,21 @@ const Task: React.FC = () => {
 
     // 初始化
   const handleKeystoreOk = () => {
-    setConfirmLoading(true)
     form2
       .validateFields()
       .then((values) => {
         form2.resetFields()
         console.log('参数values：', values)
-        request.post(`${create2UrlPrefix}/task/run`, {
+        setConfirmKeystoreLoading(true)
+        request.post(create2UrlPrefix + '/task/' + (values.runType === 'run' ? 'run' : 'rerun'), {
           data: { 
-            network_id : +values.network_id,
+            id : +values.id,
             keystore_id : +values.keystore_id,
             password : values.password,
           },
         })
           .then(function(response) {
-            setConfirmLoading(false)
+            setConfirmKeystoreLoading(false)
             setIsKeystoreModalOpen(false);
             if (response.code === 0) {
               messageApi.open({ type: 'success', content: '提交成功！' });
@@ -372,9 +379,6 @@ const Task: React.FC = () => {
       .catch((info) => {
         console.log('Validate Failed:', info);
       });
-
-    
-    
   };
 
   const handleKeystoreCancel = () => {
@@ -382,11 +386,12 @@ const Task: React.FC = () => {
   };
 
   const onKeystoreSelect = (selected: any) => {
-    setCurrKeystoreId(selected);
+    console.log('onKeystoreSelect', selected);
+    // setCurrKeystoreId(selected);
   }
 
-  const doRun = (key: React.Key) => {
-    console.log('do task run', key);
+  const doRun = (key: React.Key, type: string, keystore_id: number) => {
+    console.log('do task run', key, type, keystore_id)
     setIsKeystoreModalOpen(true)
     setIsKeystoreSpinning(true)
     request.get(`${create2UrlPrefix}/keystore/list?current=1`).then(function(response) {
@@ -394,10 +399,12 @@ const Task: React.FC = () => {
         const arr = response.data.list
         setMyKeystoreArr(arr)
         setIsKeystoreSpinning(false)
+        setRunType(type)
         setTimeout(() => {
           form2.setFieldsValue({ 
-            network_id: key,
-            keystore_id: (arr && arr.length) ? arr[0].id : ''
+            runType: type,
+            id: key,
+            keystore_id: keystore_id > 0 ? keystore_id : ((arr && arr.length) ? arr[0].id : '')
           });
         }, 10);
       } else if (response.code === 403) {
@@ -412,6 +419,19 @@ const Task: React.FC = () => {
       console.log(error);
     });
     
+  };
+
+  const showLog = (log: any) => {
+    setIsLogModalOpen(true);
+    setLogArr(log)
+  }
+
+  const handleLogOk = () => {
+    setIsLogModalOpen(false);
+  };
+
+  const handleLogCancel = () => {
+    setIsLogModalOpen(false);
   };
 
     // 表格的列
@@ -473,6 +493,19 @@ const Task: React.FC = () => {
         }
       },
       {
+        title: '运行结果',
+        key: 'run_result',
+        dataIndex: 'run_result',
+        hideInSearch: true, // 在查询表单中不展示此项
+        render: (text, record, _, action)=> {
+          const status = +record.status
+          if (status === 1 || status === 2) {
+            return '--'
+          }
+          return '成功:'+ record.success +  ', 失败:' + record.failed
+        }
+      },
+      {
         title: '最后修改时间',
         dataIndex: 'update_time',
         valueType: 'dateRange',
@@ -493,7 +526,7 @@ const Task: React.FC = () => {
         valueType: 'option',
         key: 'option',
         render: (text, record, _, action) => [
-          <a key='edit' onClick={() => {
+          (+record.status === 1 || +record.status === 4) && <a key='edit' onClick={() => {
             setOpen(true);
             setExtraObj({
               type: 'edit',
@@ -503,14 +536,14 @@ const Task: React.FC = () => {
             编辑
           </a>,
           +record.status === 1 ?
-          <a key='run' onClick={() => doRun(record.id)}>
+          <a key='run' onClick={() => doRun(record.id, 'run', 0)}>
             运行
           </a> : (+record.status === 4 && +record.failed > 0) ?
-          <a key='rerun' onClick={() => doRun(record.id)}>
+          <a key='rerun' onClick={() => doRun(record.id, 'rerun', record.keystore_id)}>
             重试
           </a> : null,
-          <a key='log' onClick={() => doRun(record.id)}>
-            查看日志
+          <a key='log' onClick={() => showLog(record.log)}>
+            日志
           </a>
         ],
       },
@@ -639,6 +672,25 @@ const Task: React.FC = () => {
             />
 
 
+            <Modal title="查看日志" width={800} open={isLogModalOpen} onOk={handleLogOk} onCancel={handleLogCancel}>
+              <table>
+                <tbody>
+                  {!logArr.length && <tr><td>暂时没有日志。</td></tr>}
+                {
+                  logArr.map((item: any, index) => {
+                    return <tr key={index}>
+                      <td width={'15%'}>{item.network_name}</td>
+                      <td width={'85%'}><ul style={{paddingLeft: 0}}>{item.logs.map((item: any) => {
+                        return <li>{item}</li>
+                      })}</ul></td>
+                    </tr>
+                  })
+                }
+                </tbody>
+              </table>
+            </Modal>
+
+
             <CollectionCreateForm
               open={open}
               isSpinning={spinning}
@@ -662,13 +714,15 @@ const Task: React.FC = () => {
                   name="form_in_modal"
                   // initialValues={defaultV}
                 >
-                  <Form.Item hidden={true} name="network_id"><Input /></Form.Item>
+                  <Form.Item hidden={true} name="id"><Input /></Form.Item>
+                  <Form.Item hidden={true} name="runType"><Input /></Form.Item>
                   <Form.Item
                     name="keystore_id"
                     label="选择Keystore"
                     rules={[{ required: true, message: '请选择Keystore！' }]}
                   >
                     <Select 
+                      disabled={runType === 'rerun' ? true : false}
                       onSelect={onKeystoreSelect}
                       options={myKeystoreArr.map((item: any) => {
                         return {
@@ -676,7 +730,7 @@ const Task: React.FC = () => {
                           label: item.name,
                         }
                       })}
-                      value={currKeystoreId}
+                      // value={currKeystoreId}
                     >
                     </Select>
                   </Form.Item>

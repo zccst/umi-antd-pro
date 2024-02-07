@@ -1,12 +1,12 @@
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
-import { Button, Form, Input, Modal, Radio, Space, Select, Popconfirm, Tooltip, message, Tag } from 'antd';
+import { Button, Form, Input, Modal, Alert, Radio, Space, Select, Popconfirm, Tooltip, message, Tag } from 'antd';
 import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
 const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { history, Link } from 'umi';
 import request from '../../../utils/req';
-import PageLoading from '../components/PageLoading';
+import PageLoading from '../../contract/components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
 import { chainUrlPrefix, LOGINPATH } from '../../../utils/constant'
 
@@ -274,7 +274,7 @@ const ChainManage: React.FC = () => {
         title: '链名称',
         key: 'name',
         dataIndex: 'name',
-        copyable: true,
+        // copyable: true,
         ellipsis: true,
         // tip: '名称过长会自动收缩',
         // 传递给 Form.Item 的配置
@@ -288,26 +288,28 @@ const ChainManage: React.FC = () => {
         },
       },
       {
-        title: 'token',
+        title: 'Token',
         key: 'token',
         dataIndex: 'token',
         hideInSearch: true, // 在查询表单中不展示此项
       },
       {
-        title: '链id',
+        title: 'ChainID',
         key: 'chain_id',
         dataIndex: 'chain_id',
         hideInSearch: true, // 在查询表单中不展示此项
       },
       {
-        title: 'rpc地址',
+        title: 'RPC地址',
         key: 'rpc',
         dataIndex: 'rpc',
+        ellipsis: true,
         hideInSearch: true, // 在查询表单中不展示此项
       },
       {
         title: '浏览器URL',
         key: 'explorer_url',
+        ellipsis: true,
         dataIndex: 'explorer_url',
         hideInSearch: true, // 在查询表单中不展示此项
       },
@@ -358,7 +360,10 @@ const ChainManage: React.FC = () => {
 
     return <GridContent>
         <>
+            <Alert message="该页面仅系统管理员可写，如需添加/编辑/删除，可联系 chao.zheng@okg.com 或 hengfang.wang@okg.com" type="info" closable />
+            <br />
             {contextHolder}
+            
             <ProTable<ChainItem>
               columns={columns}
               actionRef={actionRef} // Table action 的引用，便于自定义触发
