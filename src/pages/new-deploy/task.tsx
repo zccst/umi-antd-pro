@@ -1,6 +1,6 @@
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
-import { Button, Form, Input, Modal, Spin, Radio, Space, Select, Checkbox, Popconfirm, Tooltip, message, Tag, Row, Col } from 'antd';
+import { Button, Form, Input, Modal, Alert, Spin, Radio, Space, Select, Checkbox, Popconfirm, Tooltip, message, Tag, Row, Col } from 'antd';
 import type { RadioChangeEvent } from 'antd';
 import type { CheckboxValueType } from 'antd/es/checkbox/Group';
 import { EllipsisOutlined, PlusOutlined, MinusCircleOutlined, QuestionCircleOutlined, SearchOutlined } from '@ant-design/icons';
@@ -551,6 +551,13 @@ const Task: React.FC = () => {
 
     return <GridContent>
         <>
+            <Alert
+              message="使用流程："
+              description="1.上传keystore；2.初始化Keyless和业务工厂（此步骤由系统管理员完成）；3.创建任务；4.运行（自动化部署）。"
+              type="info"
+              showIcon
+              closable
+            /> <br />
             {contextHolder}
             <ProTable<TaskItem>
               columns={columns}

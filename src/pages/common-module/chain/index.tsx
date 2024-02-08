@@ -360,7 +360,7 @@ const ChainManage: React.FC = () => {
 
     return <GridContent>
         <>
-            <Alert message="该页面仅系统管理员可写，如需添加/编辑/删除，可联系 chao.zheng@okg.com 或 hengfang.wang@okg.com" type="info" closable />
+            <Alert message="该页面仅系统管理员可写，如需 添加/编辑/删除 请联系 chao.zheng@okg.com 或 hengfang.wang@okg.com，谢谢！" type="info" showIcon closable />
             <br />
             {contextHolder}
             
