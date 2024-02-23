@@ -536,9 +536,9 @@ const Task: React.FC = () => {
             编辑
           </a>,
           +record.status === 1 ?
-          <a key='run' onClick={() => doRun(record.id, 'run', 0)}>
-            运行
-          </a> : (+record.status === 4 && +record.failed > 0) ?
+          <Popconfirm key="delete" title="运行一段时间后需手动点击‘任务表格’右上角的刷新图标，获取最新状态" onConfirm={() => doRun(record.id, 'run', 0)}>
+            <a>运行</a>
+          </Popconfirm> : (+record.status === 4 && +record.failed > 0) ?
           <a key='rerun' onClick={() => doRun(record.id, 'rerun', record.keystore_id)}>
             重试
           </a> : null,
@@ -552,8 +552,8 @@ const Task: React.FC = () => {
     return <GridContent>
         <>
             <Alert
-              message="使用流程："
-              description="1.上传keystore；2.初始化Keyless和业务工厂（此步骤由系统管理员完成）；3.创建任务；4.运行（自动化部署）。"
+              message="使用步骤："
+              description="1.上传keystore；2.初始化Keyless和业务工厂（联系超级管理员完成）；3.创建任务；4.运行（自动化多链部署）；5.查看运行结果。"
               type="info"
               showIcon
               closable
@@ -654,7 +654,7 @@ const Task: React.FC = () => {
                   onChange: (page) => console.log(page),
               }}
               dateFormatter="string"
-              headerTitle="项目列表"
+              headerTitle="发布任务列表"
               toolBarRender={() => [
                   <Button
                       key="button"
@@ -679,10 +679,10 @@ const Task: React.FC = () => {
             />
 
 
-            <Modal title="查看日志" width={800} open={isLogModalOpen} onOk={handleLogOk} onCancel={handleLogCancel}>
+            <Modal title="查看运行日志" width={800} open={isLogModalOpen} onOk={handleLogOk} onCancel={handleLogCancel}>
               <table>
                 <tbody>
-                  {!logArr.length && <tr><td>暂时没有日志。</td></tr>}
+                  {!logArr.length && <tr><td>暂时没有日志。如果您已运行任务，先手动点击‘任务表格’右上角的刷新图标，获取链上最新状态，再来查看。</td></tr>}
                 {
                   logArr.map((item: any, index) => {
                     return <tr key={index}>
