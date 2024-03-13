@@ -26,6 +26,9 @@ export const userUrlPrefix = rootURL + "/users"; // create / delete / access_lis
 
 export const LOGINPATH = '/user/login';
 
+// 新合约create2部署
+export const create2UrlPrefix = rootURL + "/create2"; // create / delete / access_list / update
+
 
 // 公链列表
 export const LOCAL_CHAIN_LIST = [
