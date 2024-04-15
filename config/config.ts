@@ -219,6 +219,41 @@ export default defineConfig({
       ],
     },
     {
+      name: 'batch-airdrop',
+      icon: 'BgColorsOutlined',
+      path: '/batch-airdrop',
+      routes: [
+        {
+          path: '/batch-airdrop',
+          redirect: '/batch-airdrop/send',
+        },
+        {
+          name: 'erc20',
+          icon: 'smile',
+          path: '/batch-airdrop/erc20',
+          component: './batch-airdrop/erc20',
+        },
+        {
+          name: 'contract',
+          icon: 'smile',
+          path: '/batch-airdrop/contract',
+          component: './batch-airdrop/contract',
+        },
+        {
+          name: 'send',
+          icon: 'smile',
+          path: '/batch-airdrop/send',
+          component: './batch-airdrop/send',
+        },
+        {
+          name: 'history',
+          icon: 'smile',
+          path: '/batch-airdrop/history',
+          component: './batch-airdrop/history',
+        },
+      ],
+    },
+    {
       name: 'account',
       icon: 'user',
       path: '/account',
