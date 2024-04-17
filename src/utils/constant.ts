@@ -34,10 +34,10 @@ export const batchAirdropUrlPrefix = rootURL + "/airdrop";
 
 // 空投类型列表 2024-04-09
 export const AIRDROP_TYPE_LIST = [
-  { value : "erc20_same_num", label: "ERC20单地址数量相同" },
-  { value : "erc20_diff_num", label: "ERC20单地址数量不同" },
-  { value : "native_same_num", label: "原生代币单地址数量相同" },
-  { value : "native_diff_num", label: "原生代币单地址数量不同" },
+  { value : "erc20_same_num", label: "ERC20数量相同" },
+  { value : "erc20_diff_num", label: "ERC20数量不同" },
+  { value : "native_same_num", label: "原生代币数量相同" },
+  { value : "native_diff_num", label: "原生代币数量不同" },
 ];
 
 

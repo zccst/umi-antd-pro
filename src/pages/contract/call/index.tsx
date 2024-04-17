@@ -27,7 +27,7 @@ import request from '../../../utils/req';
 import PageLoading from '../components/PageLoading';
 import { shortenAddress } from '../../../utils/utils';
 import { deptProjUrl, getProjListUrl, getAbiInfoUrl, LOGINPATH } from '../../../utils/constant'
-import './index.css'
+import './wallet-customized.css'
 import thumbtackActive from './icons/thumbtack-active.jpg'
 import thumbtackDefault from './icons/thumbtack-default.jpg'
 import { stringify } from 'querystring';

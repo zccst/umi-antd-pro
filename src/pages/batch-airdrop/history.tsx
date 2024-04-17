@@ -36,7 +36,7 @@ type AirdropItem = {
 };
 
 const queryURLObj: any = new URLSearchParams(window.location.search);
-const defaultAirdropType = queryURLObj.get("airdrop_type") || 'erc20_same_num';
+const defaultAirdropType = queryURLObj.get("airdrop_type") || '';
 
 
 const AirdropHistory: React.FC = () => {
@@ -75,9 +75,9 @@ const AirdropHistory: React.FC = () => {
   const columns: ProColumns<AirdropItem>[] = [
     {
       title: '空投名称',
-      key: 'csv_name',
-      dataIndex: 'csv_name',
-      copyable: true,
+      key: 'name',
+      dataIndex: 'name',
+      // copyable: true,
       ellipsis: true,
       // tip: '名称过长会自动收缩',
       // 传递给 Form.Item 的配置
@@ -92,27 +92,37 @@ const AirdropHistory: React.FC = () => {
     },
     {
       title: '分组',
+      width: '50px',
       key: 'group_id',
       dataIndex: 'group_id',
       ellipsis: true,
       hideInSearch: true, // 在查询表单中不展示此项
     },
     {
-      title: '空投网络',
+      title: '空投网络和代币',
       key: 'network_name',
       dataIndex: 'network_name',
       copyable: true,
       ellipsis: true,
       hideInSearch: true, // 在查询表单中不展示此项
+      render: (text, record, _, action)=> {
+        return record.network_name + '(' + record.coin_name + ')'
+      },
     },
     {
       title: '空投类型',
       key: 'airdrop_type',
       dataIndex: 'airdrop_type',
       ellipsis: true,
-      // render: (text, record, _, action)=> {
-      //   return record.type ? '已初始化' : '未初始化'
-      // },
+      render: (text, record, _, action)=> {
+        let retStr = ""
+        AIRDROP_TYPE_LIST.map((item, index) => {
+          if (item.value === record.airdrop_type) {
+            retStr = item.label
+          }
+        })
+        return retStr
+      },
       renderFormItem: (item, { type, defaultRender }, form) => {
         return <Select 
           onSelect={onAirdropTypeSelect}
@@ -126,6 +136,7 @@ const AirdropHistory: React.FC = () => {
       title: '代币名称',
       key: 'coin_name',
       dataIndex: 'coin_name',
+      hideInTable: true, // 在 Table 中不展示此列
     },
     {
       title: '单笔交易最大地址数',
@@ -134,19 +145,40 @@ const AirdropHistory: React.FC = () => {
       hideInSearch: true, // 在查询表单中不展示此项
     },
     {
+      title: '操作人',
+      key: 'create_user_name',
+      dataIndex: 'create_user_name',
+      hideInTable: true, // 在 Table 中不展示此列
+    },
+    {
       title: '状态',
+      width: '100px',
       key: 'status',
       dataIndex: 'status',
       ellipsis: true,
       render: (text, record, _, action)=> {
-        return record.status ? '未发放' : '已发放'
+        const statusArr = ['', '未发放', '待确认', '发放成功', '发放失败', '无效']
+        return statusArr[record.status]
+      },
+      renderFormItem: (item, { type, defaultRender }, form) => {
+        const options = [
+          {value: 1, label: '未发放'},
+          {value: 2, label: '待确认'},
+          {value: 3, label: '发放成功'},
+          {value: 4, label: '发放失败'},
+          {value: 5, label: '无效'},
+        ]
+        return <Select 
+          options={options}
+        >
+        </Select>
       },
     },
     {
       title: '上传时间',
       key: 'update_time',
       dataIndex: 'update_time',
-      valueType: 'date',
+      valueType: 'dateTime',
       sorter: true,
       hideInSearch: true, // 在查询表单中不展示此项
     },
@@ -154,7 +186,7 @@ const AirdropHistory: React.FC = () => {
       title: '最后修改时间',
       dataIndex: 'update_time',
       valueType: 'dateRange',
-      hideInSearch: true, // 在查询表单中不展示此项
+      hideInSearch: false, // 在查询表单中不展示此项
       hideInTable: true, // 在 Table 中不展示此列
       search: { // 配置列的搜索相关，false 为隐藏
         // 转化值的 key, 一般用于时间区间的转化
@@ -230,7 +262,7 @@ const AirdropHistory: React.FC = () => {
             // console.log('columnsState onChange value: ', value);
           },
         }}
-        rowKey="network_id"
+        rowKey="id"
         search={{ // 是否显示搜索表单，传入对象时为搜索表单的配置
           labelWidth: 'auto', // 标签的宽度 'number' | 'auto'
           // collapsed: false, // 默认展开状态并去掉"收起"选项
@@ -283,10 +315,13 @@ const AirdropHistory: React.FC = () => {
 
 
 
-      <Modal title="查看空投详情" width={800} open={isDetailModalOpen} onOk={handleDetailOk} onCancel={handleDetailCancel}>
+      <Modal title="查看空投详情" width={600} open={isDetailModalOpen} onOk={handleDetailOk} onCancel={handleDetailCancel}>
         <table>
           <tbody>
-            {(!detailArr || !detailArr.length) && <tr><td>暂时没有空投详情。</td></tr>}
+          {(!detailArr || !detailArr.length) ?
+             <tr><td>暂时没有空投详情。</td></tr>
+             : <tr><td>空投地址</td><td>空投数量</td></tr>
+          }
           {
             detailArr && detailArr.map((item: any, index) => {
               let addr = ""
@@ -298,8 +333,8 @@ const AirdropHistory: React.FC = () => {
                 }
               }
               return <tr key={index}>
-                <td width={'85%'}>{addr}</td>
-                <td width={'15%'}><ul style={{paddingLeft: 0}}>{num}</ul></td>
+                <td width={'88%'}>{addr}</td>
+                <td width={'12%'}><ul style={{paddingLeft: 0}}>{num}</ul></td>
               </tr>
             })
           }
