@@ -701,6 +701,13 @@ const SendAirdrop: React.FC = () => {
   // 表格的列
   const columns: ProColumns<AirdropItem>[] = [
     {
+      title: '空投名称',
+      key: 'name',
+      dataIndex: 'name',
+      // copyable: true,
+      ellipsis: true,
+    },
+    {
       title: '分组',
       width: '50px',
       key: 'group_id',
@@ -803,7 +810,7 @@ const SendAirdrop: React.FC = () => {
       {Object.keys(web3Onboard).length ? <section >
           <Alert
               message="发空投步骤："
-              description="1.新建 -> 2.连接钱包 -> 3. 按分组发放 -> 4.查看发放状态。"
+              description="1.新建 -> 2.点击右侧“连接钱包”按钮 -> 3.按分组发放（余额不足会先自动提示授权） or 置为无效 -> 4.查看发放状态。"
               type="info"
               closable
               showIcon
