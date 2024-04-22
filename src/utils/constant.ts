@@ -26,8 +26,19 @@ export const userUrlPrefix = rootURL + "/users"; // create / delete / access_lis
 
 export const LOGINPATH = '/user/login';
 
-// 新合约create2部署
+// version2 新合约create2部署
 export const create2UrlPrefix = rootURL + "/create2"; // create / delete / access_list / update
+
+// version3 批量空投
+export const batchAirdropUrlPrefix = rootURL + "/airdrop";
+
+// 空投类型列表 2024-04-09
+export const AIRDROP_TYPE_LIST = [
+  { value : "erc20_same_num", label: "ERC20数量相同" },
+  { value : "erc20_diff_num", label: "ERC20数量不同" },
+  { value : "native_same_num", label: "原生代币数量相同" },
+  { value : "native_diff_num", label: "原生代币数量不同" },
+];
 
 
 // 公链列表
