@@ -207,7 +207,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           rules={[{ required: true, message: '请上传csv文件！' }]}
           valuePropName="fileList"
           getValueFromEvent={normFile}
-          extra="如果上传多个keystore文件，以第一个为准"
+          extra="如果上传多个文件，以第一个为准"
         >
           <Upload name="content" action="/upload.do" beforeUpload={beforeUpload} listType="text">
             <Button icon={<UploadOutlined />}>点击上传</Button>
