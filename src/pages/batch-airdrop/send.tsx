@@ -459,6 +459,89 @@ const SendAirdrop: React.FC = () => {
     console.log(e, 'I was closed.');
   };
 
+  const onRevoke = async (item: any) => {
+    if (item.airdrop_type === 'native_same_num' || item.airdrop_type === 'native_diff_num') {
+      message.warning("无需该操作，仅空投ERC20代币需要revoke");
+      return false
+    }
+    // 检查钱包连接情况
+    if (!wallet) {
+      const walletSelected = await connect()
+      if (!walletSelected) {
+        message.warning("请先连接钱包，再调用。");
+        return false
+      }
+    }
+
+    // 查看当前的链，与钱包中的链是否一致。如果不一致，则提示切换至与用户选择的链一致。
+    let currChainId = ''
+    chainListFromServer.map((chainObj: any, i) => {
+      if (chainObj.id === item.network_id) {
+        currChainId = chainObj.chain_id
+      }
+    })
+    if (!currChainId) {
+      message.warning("找不到对应网络，请先到导航菜单公共部分添加该网络。");
+      return false
+    }
+    // console.log('检查链是否一致', connectedChain?.id, currChainId, connectedChain?.id !== currChainId);
+    if (connectedChain?.id !== currChainId) {
+      setChain({ chainId: currChainId });
+    }
+
+
+    // 空投合约地址，from 创建时选择
+    let currAirdropContractAddr = ''
+    airdropContractListFromServer.map((airdropContractObj: any, i) => {
+      if (airdropContractObj.id === item.airdrop_contract_id) {
+        currAirdropContractAddr = airdropContractObj.address
+      }
+    })
+    if (!currAirdropContractAddr) {
+      message.warning("请先到导航菜单添加，路径：批量发空投-空投合约管理。");
+      return false
+    }
+
+    setCurrId(item.id)
+    setLoading(true)
+
+    // 发请求
+    const signer = provider.getUncheckedSigner();
+    
+    // 当前erc20 token合约地址
+    let currErc20ContractAddr = ''
+    let currErc20ContractAbi = ''
+    erc20ListFromServer.map((erc20Obj: any, i) => {
+      if (erc20Obj.id === item.erc20_id) {
+        currErc20ContractAddr = erc20Obj.address
+        currErc20ContractAbi = JSON.parse(erc20Obj.abi).abi
+      }
+    })
+
+    try {
+      // 还原erc20合约：合约地址，signer, provider
+      const erc20Contract = new ethers.Contract(currErc20ContractAddr, currErc20ContractAbi, signer);
+      const approveTx = await erc20Contract.approve(currAirdropContractAddr, 0);
+      console.log('approveTx', approveTx);
+      await approveTx.wait(); // TODO 等待
+      const approveRecepit = await provider.getTransactionReceipt(approveTx.hash)
+      console.log('approveRecepit', approveRecepit);
+      if (!approveRecepit) {
+        message.error('approve尚未被处理或已失败')
+      } else {
+        message.success("revoke成功！")
+      }
+      setLoading(false)
+      return false
+    } catch (exception: any) {
+      console.log('try catch', exception, typeof exception);
+      message.error(JSON.stringify(exception))
+      setLoading(false)
+    }
+  }
+
+
+
   // 更新hash。用于发送交易后，记录hash到数据库。
   const _update_hash = (id: any, txHash: any) => {
     request.post(`${batchAirdropUrlPrefix}/task/update_hash`, {
@@ -785,7 +868,7 @@ const SendAirdrop: React.FC = () => {
     },
     {
       title: '操作',
-      width: '240px',
+      width: '290px',
       valueType: 'option',
       key: 'option',
       render: (text, record, _, action) => [
@@ -801,6 +884,9 @@ const SendAirdrop: React.FC = () => {
         <Popconfirm key="delete" title="确定要置为无效吗" onConfirm={() => onSetInvalid(record.id)}>
           <a>置为无效</a>
         </Popconfirm>,
+        <a key='revoke' onClick={() => onRevoke(record)}>
+          revoke
+        </a>,
       ],
     },
   ];
@@ -949,7 +1035,7 @@ const SendAirdrop: React.FC = () => {
           <tbody>
           {(!detailArr || !detailArr.length) ?
             <tr><td>暂时没有空投详情。</td></tr>
-            : <tr><td>空投地址</td><td>空投数量</td></tr>
+            : <tr><td><strong>空投地址</strong></td><td><strong>空投数量</strong></td></tr>
           }
           {
             detailArr && detailArr.map((item: any, index) => {

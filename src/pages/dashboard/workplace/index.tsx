@@ -25,6 +25,13 @@ const Dashboard: React.FC = () => {
       <h1>我的工作台</h1>
       <Alert
         message="近期升级："
+        description="2024-04-18 上线了批量发空投模块。"
+        type="info"
+        showIcon
+        closable
+      />
+      <Alert
+        message="近期升级："
         description="2024-02-07 上线了新合约发布模块。"
         type="info"
         showIcon
