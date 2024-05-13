@@ -12,6 +12,7 @@ import {
 } from '../contract/call/services'
 import '../contract/call/wallet-customized.css'
 import { ethers } from 'ethers'
+import { BigNumber } from 'ethers'
 
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
@@ -68,6 +69,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   const [form] = Form.useForm();
 
   const [currAirdropType, setCurrAirdropType] = useState('erc20_same_num');
+  const [currChainId, setCurrChainId] = useState(0);
   const title = "创建";
 
   const defaultV = {
@@ -87,7 +89,29 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 
   const onAirdropSelect = (airdrop_type: any) => {
     setCurrAirdropType(airdrop_type)
-    form.setFieldsValue({airdrop_type: airdrop_type});
+    const currOptions = extraObj.erc20FormOptions.map((item: any) => {
+      if (item.network_id === currChainId) {
+        return item
+      }
+    }).filter(Boolean)
+    form.setFieldsValue({airdrop_type: airdrop_type, erc20_id: currOptions[0]});
+  }
+
+  const onChainChange = (chainId: any) => {
+    setCurrChainId(chainId)
+    const currOptions = extraObj.airdropContractFormOptions.map((item: any) => {
+      if (item.network_id === chainId) {
+        return item
+      }
+    }).filter(Boolean)
+
+    const currOptions2 = extraObj.erc20FormOptions.map((item: any) => {
+      if (item.network_id === chainId) {
+        return item
+      }
+    }).filter(Boolean)
+    // 修改另一个select的值
+    form.setFieldsValue({airdrop_contract_id: currOptions[0], erc20_id: currOptions2[0]});
   }
 
   const onLocalCancel = () => {
@@ -157,6 +181,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           rules={[{ required: true, message: '请选择所属网络！' }]}
         >
           <Select 
+            onChange={onChainChange}
             disabled={(extraObj.type === 'edit') ? true : false}
             options={extraObj.chainFormOptions}
           >
@@ -194,7 +219,15 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
             >
               <Select 
                 disabled={(extraObj.type === 'edit') ? true : false}
-                options={extraObj.erc20FormOptions}
+                options={ currChainId ? 
+                  extraObj.erc20FormOptions.map((item: any) => {
+                    if (item.network_id === currChainId) {
+                      return item
+                    }
+                  }).filter(Boolean)
+                  :
+                  extraObj.erc20FormOptions
+                }
               >
               </Select>
             </Form.Item>
@@ -228,7 +261,15 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         >
           <Select 
             disabled={(extraObj.type === 'edit') ? true : false}
-            options={extraObj.airdropContractFormOptions}
+            options={ currChainId ? 
+              extraObj.airdropContractFormOptions.map((item: any) => {
+                if (item.network_id === currChainId) {
+                  return item
+                }
+              }).filter(Boolean)
+              :
+              extraObj.airdropContractFormOptions
+            }
           >
           </Select>
         </Form.Item>
@@ -299,6 +340,7 @@ const SendAirdrop: React.FC = () => {
           const targetArr = data.map((item: any) => {
             return {
               value: '' + item.id,
+              network_id: item.network_id,
               label: item.name,
               id: item.id,
               address: item.address,
@@ -329,6 +371,7 @@ const SendAirdrop: React.FC = () => {
           const targetArr = data.map((item: any) => {
             return {
               value: '' + item.id,
+              network_id: item.network_id,
               label: item.name,
               id: item.id,
               address: item.address,
@@ -404,7 +447,7 @@ const SendAirdrop: React.FC = () => {
       network_id: +values['network_id'],
       airdrop_type: values['airdrop_type'],
       erc20_id: +values['erc20_id'],
-      value_per_address: +values['value_per_address'],
+      value_per_address: values['value_per_address'],
       csv: values['csv'],
       csv_name: values['csv_name'],
       max_address_num: +values['max_address_num'],
@@ -637,13 +680,15 @@ const SendAirdrop: React.FC = () => {
     }
     let toAddrs: any = []
     let toNums: any = []
-    let totalNum = 0
+    let totalNum = BigNumber.from(0)
     item.address_list.map((toObj: any) => {
       for ( let key in toObj) {
         if (toObj.hasOwnProperty(key)) {
           toAddrs.push(key)
-          toNums.push(+toObj[key])
-          totalNum += +toObj[key]
+          // toNums.push(+toObj[key])
+          toNums.push(BigNumber.from(toObj[key]))
+          // totalNum += +toObj[key]
+          totalNum = totalNum.add(BigNumber.from(toObj[key]))
         }
       }
     })
@@ -668,10 +713,9 @@ const SendAirdrop: React.FC = () => {
         // 还原erc20合约：合约地址，signer, provider
         const erc20Contract = new ethers.Contract(currErc20ContractAddr, currErc20ContractAbi, signer);
         const allowed_num = await erc20Contract.allowance(wallet?.accounts[0].address, currAirdropContractAddr);
-        const readable_allowed_num = +allowed_num.toString()
-        console.log('readable_allowed_num', readable_allowed_num);
-        console.log(readable_allowed_num, totalNum, readable_allowed_num < totalNum)
-        if (readable_allowed_num < totalNum) {
+        const readable_allowed_num = allowed_num.toString() // +
+        console.log('readable_allowed_num', readable_allowed_num, totalNum, BigNumber.from(readable_allowed_num).lt(totalNum))
+        if (BigNumber.from(readable_allowed_num).lt(totalNum)) {
           message.info("当前授权余额不足，需要对空投合约再次授权")
           const approveTx = await erc20Contract.approve(currAirdropContractAddr, totalNum);
           console.log('approveTx', approveTx);
