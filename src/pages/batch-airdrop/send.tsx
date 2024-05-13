@@ -242,7 +242,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           getValueFromEvent={normFile}
           extra="如果上传多个文件，以第一个为准"
         >
-          <Upload name="content" action="/upload.do" beforeUpload={beforeUpload} listType="text">
+          <Upload name="content" beforeUpload={beforeUpload} listType="text">
             <Button icon={<UploadOutlined />}>点击上传</Button>
           </Upload>
         </Form.Item>
