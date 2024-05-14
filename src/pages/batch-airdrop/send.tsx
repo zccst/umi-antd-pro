@@ -12,6 +12,7 @@ import {
 } from '../contract/call/services'
 import '../contract/call/wallet-customized.css'
 import { ethers } from 'ethers'
+import { BigNumber } from 'ethers'
 
 import { ActionType, ProColumns } from '@ant-design/pro-components';
 import { GridContent, ProTable, TableDropdown } from '@ant-design/pro-components';
@@ -68,6 +69,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   const [form] = Form.useForm();
 
   const [currAirdropType, setCurrAirdropType] = useState('erc20_same_num');
+  const [currChainId, setCurrChainId] = useState(0);
   const title = "创建";
 
   const defaultV = {
@@ -87,7 +89,29 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 
   const onAirdropSelect = (airdrop_type: any) => {
     setCurrAirdropType(airdrop_type)
-    form.setFieldsValue({airdrop_type: airdrop_type});
+    const currOptions = extraObj.erc20FormOptions.map((item: any) => {
+      if (item.network_id === currChainId) {
+        return item
+      }
+    }).filter(Boolean)
+    form.setFieldsValue({airdrop_type: airdrop_type, erc20_id: currOptions[0]});
+  }
+
+  const onChainChange = (chainId: any) => {
+    setCurrChainId(chainId)
+    const currOptions = extraObj.airdropContractFormOptions.map((item: any) => {
+      if (item.network_id === chainId) {
+        return item
+      }
+    }).filter(Boolean)
+
+    const currOptions2 = extraObj.erc20FormOptions.map((item: any) => {
+      if (item.network_id === chainId) {
+        return item
+      }
+    }).filter(Boolean)
+    // 修改另一个select的值
+    form.setFieldsValue({airdrop_contract_id: currOptions[0], erc20_id: currOptions2[0]});
   }
 
   const onLocalCancel = () => {
@@ -157,6 +181,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           rules={[{ required: true, message: '请选择所属网络！' }]}
         >
           <Select 
+            onChange={onChainChange}
             disabled={(extraObj.type === 'edit') ? true : false}
             options={extraObj.chainFormOptions}
           >
@@ -194,7 +219,15 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
             >
               <Select 
                 disabled={(extraObj.type === 'edit') ? true : false}
-                options={extraObj.erc20FormOptions}
+                options={ currChainId ? 
+                  extraObj.erc20FormOptions.map((item: any) => {
+                    if (item.network_id === currChainId) {
+                      return item
+                    }
+                  }).filter(Boolean)
+                  :
+                  extraObj.erc20FormOptions
+                }
               >
               </Select>
             </Form.Item>
@@ -209,7 +242,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
           getValueFromEvent={normFile}
           extra="如果上传多个文件，以第一个为准"
         >
-          <Upload name="content" action="/upload.do" beforeUpload={beforeUpload} listType="text">
+          <Upload name="content" customRequest={(option: any)=>{ option.onSuccess() }} beforeUpload={beforeUpload} listType="text">
             <Button icon={<UploadOutlined />}>点击上传</Button>
           </Upload>
         </Form.Item>
@@ -228,7 +261,15 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         >
           <Select 
             disabled={(extraObj.type === 'edit') ? true : false}
-            options={extraObj.airdropContractFormOptions}
+            options={ currChainId ? 
+              extraObj.airdropContractFormOptions.map((item: any) => {
+                if (item.network_id === currChainId) {
+                  return item
+                }
+              }).filter(Boolean)
+              :
+              extraObj.airdropContractFormOptions
+            }
           >
           </Select>
         </Form.Item>
@@ -299,6 +340,7 @@ const SendAirdrop: React.FC = () => {
           const targetArr = data.map((item: any) => {
             return {
               value: '' + item.id,
+              network_id: item.network_id,
               label: item.name,
               id: item.id,
               address: item.address,
@@ -329,6 +371,7 @@ const SendAirdrop: React.FC = () => {
           const targetArr = data.map((item: any) => {
             return {
               value: '' + item.id,
+              network_id: item.network_id,
               label: item.name,
               id: item.id,
               address: item.address,
@@ -404,7 +447,7 @@ const SendAirdrop: React.FC = () => {
       network_id: +values['network_id'],
       airdrop_type: values['airdrop_type'],
       erc20_id: +values['erc20_id'],
-      value_per_address: +values['value_per_address'],
+      value_per_address: values['value_per_address'],
       csv: values['csv'],
       csv_name: values['csv_name'],
       max_address_num: +values['max_address_num'],
@@ -458,6 +501,89 @@ const SendAirdrop: React.FC = () => {
   const onAlertClose = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     console.log(e, 'I was closed.');
   };
+
+  const onRevoke = async (item: any) => {
+    if (item.airdrop_type === 'native_same_num' || item.airdrop_type === 'native_diff_num') {
+      message.warning("无需该操作，仅空投ERC20代币需要revoke");
+      return false
+    }
+    // 检查钱包连接情况
+    if (!wallet) {
+      const walletSelected = await connect()
+      if (!walletSelected) {
+        message.warning("请先连接钱包，再调用。");
+        return false
+      }
+    }
+
+    // 查看当前的链，与钱包中的链是否一致。如果不一致，则提示切换至与用户选择的链一致。
+    let currChainId = ''
+    chainListFromServer.map((chainObj: any, i) => {
+      if (chainObj.id === item.network_id) {
+        currChainId = chainObj.chain_id
+      }
+    })
+    if (!currChainId) {
+      message.warning("找不到对应网络，请先到导航菜单公共部分添加该网络。");
+      return false
+    }
+    // console.log('检查链是否一致', connectedChain?.id, currChainId, connectedChain?.id !== currChainId);
+    if (connectedChain?.id !== currChainId) {
+      setChain({ chainId: currChainId });
+    }
+
+
+    // 空投合约地址，from 创建时选择
+    let currAirdropContractAddr = ''
+    airdropContractListFromServer.map((airdropContractObj: any, i) => {
+      if (airdropContractObj.id === item.airdrop_contract_id) {
+        currAirdropContractAddr = airdropContractObj.address
+      }
+    })
+    if (!currAirdropContractAddr) {
+      message.warning("请先到导航菜单添加，路径：批量发空投-空投合约管理。");
+      return false
+    }
+
+    setCurrId(item.id)
+    setLoading(true)
+
+    // 发请求
+    const signer = provider.getUncheckedSigner();
+    
+    // 当前erc20 token合约地址
+    let currErc20ContractAddr = ''
+    let currErc20ContractAbi = ''
+    erc20ListFromServer.map((erc20Obj: any, i) => {
+      if (erc20Obj.id === item.erc20_id) {
+        currErc20ContractAddr = erc20Obj.address
+        currErc20ContractAbi = JSON.parse(erc20Obj.abi).abi
+      }
+    })
+
+    try {
+      // 还原erc20合约：合约地址，signer, provider
+      const erc20Contract = new ethers.Contract(currErc20ContractAddr, currErc20ContractAbi, signer);
+      const approveTx = await erc20Contract.approve(currAirdropContractAddr, 0);
+      console.log('approveTx', approveTx);
+      await approveTx.wait(); // TODO 等待
+      const approveRecepit = await provider.getTransactionReceipt(approveTx.hash)
+      console.log('approveRecepit', approveRecepit);
+      if (!approveRecepit) {
+        message.error('approve尚未被处理或已失败')
+      } else {
+        message.success("revoke成功！")
+      }
+      setLoading(false)
+      return false
+    } catch (exception: any) {
+      console.log('try catch', exception, typeof exception);
+      message.error(JSON.stringify(exception))
+      setLoading(false)
+    }
+  }
+
+
 
   // 更新hash。用于发送交易后，记录hash到数据库。
   const _update_hash = (id: any, txHash: any) => {
@@ -554,13 +680,15 @@ const SendAirdrop: React.FC = () => {
     }
     let toAddrs: any = []
     let toNums: any = []
-    let totalNum = 0
+    let totalNum = BigNumber.from(0)
     item.address_list.map((toObj: any) => {
       for ( let key in toObj) {
         if (toObj.hasOwnProperty(key)) {
           toAddrs.push(key)
-          toNums.push(+toObj[key])
-          totalNum += +toObj[key]
+          // toNums.push(+toObj[key])
+          toNums.push(BigNumber.from(toObj[key]))
+          // totalNum += +toObj[key]
+          totalNum = totalNum.add(BigNumber.from(toObj[key]))
         }
       }
     })
@@ -585,10 +713,9 @@ const SendAirdrop: React.FC = () => {
         // 还原erc20合约：合约地址，signer, provider
         const erc20Contract = new ethers.Contract(currErc20ContractAddr, currErc20ContractAbi, signer);
         const allowed_num = await erc20Contract.allowance(wallet?.accounts[0].address, currAirdropContractAddr);
-        const readable_allowed_num = +allowed_num.toString()
-        console.log('readable_allowed_num', readable_allowed_num);
-        console.log(readable_allowed_num, totalNum, readable_allowed_num < totalNum)
-        if (readable_allowed_num < totalNum) {
+        const readable_allowed_num = allowed_num.toString() // +
+        console.log('readable_allowed_num', readable_allowed_num, totalNum, BigNumber.from(readable_allowed_num).lt(totalNum))
+        if (BigNumber.from(readable_allowed_num).lt(totalNum)) {
           message.info("当前授权余额不足，需要对空投合约再次授权")
           const approveTx = await erc20Contract.approve(currAirdropContractAddr, totalNum);
           console.log('approveTx', approveTx);
@@ -785,7 +912,7 @@ const SendAirdrop: React.FC = () => {
     },
     {
       title: '操作',
-      width: '240px',
+      width: '290px',
       valueType: 'option',
       key: 'option',
       render: (text, record, _, action) => [
@@ -801,6 +928,9 @@ const SendAirdrop: React.FC = () => {
         <Popconfirm key="delete" title="确定要置为无效吗" onConfirm={() => onSetInvalid(record.id)}>
           <a>置为无效</a>
         </Popconfirm>,
+        <a key='revoke' onClick={() => onRevoke(record)}>
+          revoke
+        </a>,
       ],
     },
   ];
@@ -949,7 +1079,7 @@ const SendAirdrop: React.FC = () => {
           <tbody>
           {(!detailArr || !detailArr.length) ?
             <tr><td>暂时没有空投详情。</td></tr>
-            : <tr><td>空投地址</td><td>空投数量</td></tr>
+            : <tr><td><strong>空投地址</strong></td><td><strong>空投数量</strong></td></tr>
           }
           {
             detailArr && detailArr.map((item: any, index) => {
