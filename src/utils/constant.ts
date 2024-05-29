@@ -32,6 +32,9 @@ export const create2UrlPrefix = rootURL + "/create2"; // create / delete / acces
 // version3 批量空投
 export const batchAirdropUrlPrefix = rootURL + "/airdrop";
 
+// v4
+export const noPrivateKeyUrlPrefix = rootURL + "/nopri";
+
 // 空投类型列表 2024-04-09
 export const AIRDROP_TYPE_LIST = [
   { value : "erc20_same_num", label: "ERC20数量相同" },

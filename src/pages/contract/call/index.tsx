@@ -193,7 +193,7 @@ const Call: React.FC = () => {
 
     // 顶部
     // 在调用AtAddress验证地址合法性
-    const onAtAddress= () => {
+    const onAtAddress= async () => {
         console.log("At Address", currAddress);
         // 检查非空地址
         if (!currAddress) {
@@ -207,7 +207,7 @@ const Call: React.FC = () => {
         const selectChainId = currChainId;
         console.log('检查链是否一致', connectedChain?.id, selectChainId, connectedChain?.id !== selectChainId);
         if (connectedChain?.id !== selectChainId) {
-            setChain({ chainId: selectChainId });
+            await setChain({ chainId: selectChainId });
         }
 
         // 设置右侧address，如果是临时地址，则全部不再高亮。

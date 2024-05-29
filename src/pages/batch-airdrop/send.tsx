@@ -529,7 +529,7 @@ const SendAirdrop: React.FC = () => {
     }
     // console.log('检查链是否一致', connectedChain?.id, currChainId, connectedChain?.id !== currChainId);
     if (connectedChain?.id !== currChainId) {
-      setChain({ chainId: currChainId });
+      await setChain({ chainId: currChainId });
     }
 
 
@@ -653,7 +653,7 @@ const SendAirdrop: React.FC = () => {
     }
     // console.log('检查链是否一致', connectedChain?.id, currChainId, connectedChain?.id !== currChainId);
     if (connectedChain?.id !== currChainId) {
-      setChain({ chainId: currChainId });
+      await setChain({ chainId: currChainId });
     }
 
     setCurrId(item.id)

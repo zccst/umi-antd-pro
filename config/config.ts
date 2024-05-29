@@ -141,7 +141,53 @@ export default defineConfig({
       ],
     },
      */
-    
+    {
+      name: 'no-privatekey',
+      icon: 'BgColorsOutlined',
+      path: '/no-privatekey',
+      routes: [
+        {
+          path: '/no-privatekey',
+          redirect: '/no-privatekey/send',
+        },
+        {
+          name: 'approvallist',
+          icon: 'smile',
+          path: '/no-privatekey/approvallist',
+          component: './no-privatekey/approvalList',
+        },
+        {
+          name: 'privilegelist',
+          icon: 'smile',
+          path: '/no-privatekey/privilegelist',
+          component: './no-privatekey/privilegeList',
+        },
+        {
+          name: 'contractlist',
+          icon: 'smile',
+          path: '/no-privatekey/contractlist',
+          component: './no-privatekey/contractList',
+        },
+        {
+          name: 'send',
+          icon: 'smile',
+          path: '/no-privatekey/send',
+          component: './no-privatekey/send',
+        },
+        {
+          name: 'mytaskapproval',
+          icon: 'smile',
+          path: '/no-privatekey/myTaskApproval',
+          component: './no-privatekey/myTaskApproval',
+        },
+        {
+          name: 'history',
+          icon: 'smile',
+          path: '/no-privatekey/history',
+          component: './no-privatekey/history',
+        },
+      ],
+    },
     {
       name: 'contract',
       icon: 'MenuUnfoldOutlined',
