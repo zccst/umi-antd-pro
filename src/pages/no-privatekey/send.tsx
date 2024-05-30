@@ -96,23 +96,32 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   }
 
   // 两重筛选：部门 && 网络
-  const privilegeAddrOptions = []
-  for (let i = 0; i < extraObj.privilegeAddrFormOptions.length; i++) {
-    for (let j = 0; j < extraObj.privilegeAddrFormOptions[i].networks.length; j++) {
-      if (extraObj.privilegeAddrFormOptions[i].deaprtment_name === extraObj.item.network_name
-        && extraObj.privilegeAddrFormOptions[i].networks[j].network_name === extraObj.item.network_name) {
-        privilegeAddrOptions.push({
-          value: extraObj.privilegeAddrFormOptions[i].value,
-          label: extraObj.privilegeAddrFormOptions[i].address + "(" 
-            + extraObj.privilegeAddrFormOptions[i].poc + "," 
-            + extraObj.privilegeAddrFormOptions[i].desc + ")",
-        })
+  if (!extraObj.privilegeAddrFormOptions) {
+    extraObj.privilegeAddrFormOptions = []
+  }
+  const sameDeptAddrs = extraObj.privilegeAddrFormOptions.map((item: any) => {
+    if (item.department_name === extraObj.item.department_name) {
+      return item
+    }
+  }).filter(Boolean)
+  const privilegeAddrOptions = sameDeptAddrs.map((item: any) => {
+    let isInNetwork = false
+    for ( let i = 0; i < item.networks.length; i++) {
+      if (extraObj.item.network_name === item.networks[i].network_name) {
+        isInNetwork = true
       }
     }
-  }
+    if (isInNetwork) {
+      return {
+        value: item.value,
+        label: item.address + "(" + item.poc + "," + item.desc + ")"
+      }
+    }
+  }).filter(Boolean)
+  console.log('privilegeAddrOptions', extraObj.item.network_name, privilegeAddrOptions)
   
   // 只创建，不修改 [currMethod]
-  console.log('defaultV', currInputs, currMethod);
+  console.log('defaultV', currInputs, currMethod, privilegeAddrOptions);
 
   setTimeout(() => {
     form.setFieldsValue(defaultV);
@@ -201,7 +210,6 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
                   return <Radio key={index} value={method}>{method}</Radio>
                 })
               }
-              <Radio key="upgradeTo" value="upgradeTo">upgradeTo(fake)</Radio>
             </Space>
           </Radio.Group>
         </Form.Item>
@@ -246,7 +254,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
 
 let provider : any
 
-const SendAirdrop: React.FC = () => {
+const SendTask: React.FC = () => {
   const actionRef = useRef<ActionType>();
   const { initialState } = useModel('@@initialState');
 
@@ -723,4 +731,4 @@ const SendAirdrop: React.FC = () => {
 };
 
 
-export default SendAirdrop;
+export default SendTask;

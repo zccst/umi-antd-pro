@@ -177,7 +177,7 @@ const SendAirdrop: React.FC = () => {
 
 
 
-  // 通过审批
+  // 审批Modal open
   const showDetailModal = (op_type: string, info: any) => {
     setOpen(true)
     setOpType(op_type)
@@ -187,18 +187,21 @@ const SendAirdrop: React.FC = () => {
       form.setFieldsValue(info);
     }, 1000);
   }
-
+  // 审批Modal close
   const onCancel = () => {
     setOpen(false)
   }
+
+  // 拒绝审批
   const onRefuse = (values: any) => {
     const newParam = {
       id: +values['id'],
       message: values['message'],
     }
     console.log('拒绝newParam', newParam);
-    return false
-    request.post(`${noPrivateKeyUrlPrefix}/contract_task/reject}`, {
+    // return false
+    setConfirmLoading(true)
+    request.post(`${noPrivateKeyUrlPrefix}/contract_task/reject`, {
       data: newParam,
     })
       .then(function(response) {
@@ -246,54 +249,17 @@ const SendAirdrop: React.FC = () => {
         ],
       };
 
-      // 待签名的数据
-      // const value = {
-      //   from: '0xCD2a3d9F938E13CD947Ec05AbC7FE734Df8DD826',
-      //   to: '0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB',
-      //   calldata: 'Hello, Bob!'
-      // };
-      // 待签名的数据
-      // const domain = {
-      //   "name":"PrivateKeyMgmt",
-      //   "version":"1"
-      // }
-      // const types = {
-      //   "EIP712Domain":[
-      //     {
-      //       "name":"name",
-      //       "type":"string"
-      //     },
-      //     {
-      //       "name":"version",
-      //       "type":"string"
-      //     }
-      //   ],
-      //   "Transaction":[
-      //     {
-      //       "name":"from",
-      //       "type":"address"
-      //     },
-      //     {
-      //       "name":"to",
-      //       "type":"address"
-      //     },
-      //     {
-      //       "name":"calldata",
-      //       "type":"bytes"
-      //     }
-      //   ]
-      // }
       // 测试验证
-      const value = {
-        from: "0xe1c7db7575babf0d3369835678ec9b7f15c0886b", // 特权地址
-        to: "0xFc99f58A8974A4bc36e60E2d490Bb8D72899ee9f", // 合约地址
-        calldata: "0x704b6c02000000000000000000000000e1c7db7575babf0d3369835678ec9b7f15c0886b"
-      };
       // const value = {
-      //   from: values['method_privilege_addr'], // 特权地址
-      //   to: values['contract_address'], // 合约地址
-      //   calldata: values['calldata']
+      //   from: "0xe1c7db7575babf0d3369835678ec9b7f15c0886b", // 特权地址
+      //   to: "0xFc99f58A8974A4bc36e60E2d490Bb8D72899ee9f", // 合约地址
+      //   calldata: "0x704b6c02000000000000000000000000e1c7db7575babf0d3369835678ec9b7f15c0886b"
       // };
+      const value = {
+        from: values['method_privilege_addr'], // 特权地址
+        to: values['contract_address'], // 合约地址
+        calldata: values['calldata']
+      };
       const signature = await signer._signTypedData(domain, types, value);
       
 
@@ -303,9 +269,9 @@ const SendAirdrop: React.FC = () => {
       }
       console.log('通过newParam', newParam);
 
-      return false
+      // return false
       setConfirmLoading(true);
-      request.post(`${noPrivateKeyUrlPrefix}/contract_task/approve}`, {
+      request.post(`${noPrivateKeyUrlPrefix}/contract_task/approve`, {
         data: newParam,
       })
         .then(function(response) {
@@ -333,7 +299,29 @@ const SendAirdrop: React.FC = () => {
     }
   };
 
+  // 提前终止 审批
   const handleTerminate = (id: any) => {
+    console.log('终止', id);
+    // return false
+    request.post(`${noPrivateKeyUrlPrefix}/contract_task/cancel`, {
+      data: {
+        id: id
+      },
+    }).then(function(response) {
+        if (response.code === 0) {
+          message.success('提交成功！')
+          actionRef.current?.reload();
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
+          history.push(LOGINPATH);
+        } else {
+          message.error('提交失败，原因：' + response.msg)
+        }
+      })
+      .catch(function(error) {
+        console.log(error);
+      });
   };
 
   const onAlertClose = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
@@ -357,6 +345,36 @@ const SendAirdrop: React.FC = () => {
       },
     },
     {
+      title: '任务状态',
+      key: 'status',
+      dataIndex: 'status',
+      hideInTable: true, // 在 Table 中不展示此列
+      renderFormItem: (item, { type, defaultRender }, form) => {
+        return <Select 
+          options={[{
+            label: '审批中',
+            value: '2'
+          },{
+            label: '已通过',
+            value: '3'
+          },{
+            label: '已拒绝',
+            value: '4'
+          },{
+            label: '已终止',
+            value: '5'
+          },{
+            label: '已广播',
+            value: '6'
+          },{
+            label: '广播失败',
+            value: '7'
+          }]}
+        >
+        </Select>
+      },
+    },
+    {
       title: '任务名称',
       key: 'name',
       dataIndex: 'name',
@@ -365,7 +383,7 @@ const SendAirdrop: React.FC = () => {
       render:  (data, record, _)=> {
         const desc = record.desc ? '(' + record.desc + ')': ''
         return <span>{record.name}{desc}</span>;
-      }
+      },
     },
     {
       title: '合约地址',
@@ -396,14 +414,6 @@ const SendAirdrop: React.FC = () => {
       hideInSearch: true, // 在查询表单中不展示此项
     },
     {
-      title: '特权地址',
-      key: 'method_privilege_addr',
-      dataIndex: 'method_privilege_addr',
-      ellipsis: true,
-      copyable: true,
-      hideInSearch: true, // 在查询表单中不展示此项
-    },
-    {
       title: '申请人',
       key: 'apply_user_name',
       dataIndex: 'apply_user_name',
@@ -425,6 +435,14 @@ const SendAirdrop: React.FC = () => {
         const statusArr = ['', '未审批', '审批中', '已通过', '已拒绝', '已终止', '已广播', '广播失败']
         return statusArr[record.status]
       },
+    },
+    {
+      title: '最后修改时间',
+      key: 'update_time',
+      dataIndex: 'update_time',
+      valueType: 'dateTime',
+      sorter: true,
+      hideInSearch: true, // 在查询表单中不展示此项
     },
     {
       title: '最后修改时间',
@@ -529,6 +547,7 @@ const SendAirdrop: React.FC = () => {
           console.log('params', params, sort, filter);
           // 默认使用我的任务列表
           !params['type'] ? params['type'] = 'my_task' : ''
+          !params['status'] ? params['status'] = '2' : ''
           let ret: any = {};
           await request<{
             data: TaskItem[];
@@ -666,10 +685,9 @@ const SendAirdrop: React.FC = () => {
                 .then((values) => {
                   // 参数检查，在重置前
                   if (!values['message']) {
-                    message.error("拒绝时，拒绝理由必填")
+                    message.error("拒绝时，拒绝原因必填")
                     return false
                   }
-
                   form.resetFields();
                   onRefuse(values);
                 })

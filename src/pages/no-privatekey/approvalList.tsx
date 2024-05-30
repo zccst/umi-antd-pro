@@ -6,7 +6,7 @@ const { TextArea } = Input;
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { history, Link } from 'umi';
 import request from '../../utils/req';
-import { noPrivateKeyUrlPrefix, deptProjUrl, LOGINPATH, AIRDROP_TYPE_LIST } from '../../utils/constant'
+import { noPrivateKeyUrlPrefix, deptProjUrl, LOGINPATH, userUrlPrefix } from '../../utils/constant'
 import { getChains } from '@/services/ant-design-pro/api';
 
 
@@ -45,31 +45,65 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
   onCancel,
 }) => {
   const [form] = Form.useForm();
+
+  const defaultDeptId = extraObj.type === 'edit' ? '' + extraObj.item.department_id
+    : (extraObj.deptFormOptions.length ? extraObj.deptFormOptions[0]['value'] : '')
+
+  const [currDeptId, setCurrDeptId] = useState(defaultDeptId);
   const title = extraObj.type === 'edit' ? "编辑 ( ID=" + extraObj.item.id + " )" : "创建";
+  
+  let currDeptName = ''
+  let currId = currDeptId ? currDeptId : defaultDeptId
+  extraObj.deptFormOptions.map((item: any) => {
+    if (+item.value === +currId) {
+      currDeptName = item.label
+    }
+  });
+  const defaultMatchUserList = extraObj.usersFormOptions.map((item: any) => {
+    if (item.depts.includes(currDeptName)) {
+      return item
+    }
+  }).filter(Boolean)
+
 
   const defaultV = (extraObj.type === 'edit') ? { // 'edit'
     ...extraObj.item,
     department_id: '' + extraObj.item.department_id,
+    user_id: '' + extraObj.item.user_id,
   } : {
-    department_id: extraObj.deptFormOptions.length ? extraObj.deptFormOptions[0]['value'] : '',
+    department_id:  defaultDeptId,
+    address: '',
+    user_id: '' + defaultMatchUserList[0]?.value
   }
-  console.log('defaultV', extraObj, defaultV);
-  
+  // console.log('defaultV', defaultMatchUserList, defaultV);
   setTimeout(() => {
     form.setFieldsValue(defaultV);
   }, 10);
 
   const onLocalCancel = () => {
     form.resetFields();
+    setCurrDeptId('') // important
     onCancel();
   }
+
+  const onDeptChange = (value: string) => {
+    console.log(`selected ${value}`);
+    setCurrDeptId(value)
+  };
+  const onChange = (value: string) => {
+    console.log(`selected ${value}`);
+  };
+  
+  const onSearch = (value: string) => {
+    console.log('search:', value);
+  };
 
   return (
     <Modal
       open={open}
       confirmLoading={confirmLoading}
       title={title}
-      width={800}
+      width={600}
       onCancel={onLocalCancel}
       onOk={() => {
         form
@@ -86,8 +120,8 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
       <Form
         form={form}
         layout="horizontal"
-        labelCol={{ span: 3 }}
-        wrapperCol={{ span: 19 }}
+        labelCol={{ span: 5 }}
+        wrapperCol={{ span: 17 }}
         name="form_in_modal"
         // initialValues={defaultV}
       >
@@ -101,6 +135,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         >
           <Select 
             disabled={(extraObj.type === 'edit') ? true : false}
+            onChange={onDeptChange}
             options={extraObj.deptFormOptions}
           >
           </Select>
@@ -112,12 +147,22 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         >
           <Input />
         </Form.Item>
-        <Form.Item
-          name="user_name"
+        <Form.Item 
           label="审批人"
-          rules={[{ required: true, message: '请输入审批人！' }]}
+          name="user_id"
+          rules={[{ required: true, message: '请选择审批人！' }]}
         >
-          <Input />
+          <Select 
+            showSearch
+            optionFilterProp="children"
+            onChange={onChange}
+            onSearch={onSearch}
+            filterOption={(input, option) =>
+              ((option?.label ?? '') as String).toLowerCase().includes(input.toLowerCase())
+            }
+            options={defaultMatchUserList}
+          >
+          </Select>
         </Form.Item>
       </Form>
     </Modal>
@@ -131,7 +176,7 @@ const PRIVILEGE_LIST: React.FC = () => {
 
     const [open, setOpen] = useState(false);
     // const [modalItem, setModalItem] = useState<{[key: string]: any}>({});
-    const [extraObj, setExtraObj] = useState({type: '', item: {}, deptFormOptions:[]});
+    const [extraObj, setExtraObj] = useState({type: '', item: {}, usersFormOptions:[], deptFormOptions:[]});
     const [confirmLoading, setConfirmLoading] = useState(false);
 
 
@@ -142,6 +187,8 @@ const PRIVILEGE_LIST: React.FC = () => {
     const onDepartmentSelect = (selected: any) => {
       setDepartmentId(selected);
     }
+
+    const [userListFromServer, setUserListFromServer] = useState([]);
 
 
     useEffect(() => {
@@ -168,6 +215,33 @@ const PRIVILEGE_LIST: React.FC = () => {
         .catch(function(error) {
           console.log(error);
         });
+
+      request
+        .get(userUrlPrefix + "/list?current=1")
+        .then(function(response) {
+          if (response.code === 0) {
+            const data = response.data.list;
+            const targetArr = data.map((item: any) => {
+              return {
+                value: '' + item.id,
+                label: item.username,
+                depts: item.depts.map((item: any) => item.name),
+              }
+            });
+            setUserListFromServer(targetArr);
+          } else if (response.code === 403) {
+            //TODO
+            message.error('登录已超时，请重新登录。');
+            history.push(LOGINPATH);
+          } else {
+            message.error("获取部门列表失败，原因：" + response.msg);
+          }
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+
+      
     }, []);
 
 
@@ -181,7 +255,7 @@ const PRIVILEGE_LIST: React.FC = () => {
       const newParam = {
         department_id: +values['department_id'],
         address: values['address'],
-        user_name: values['user_name'],
+        user_id: +values['user_id'],
       }
       const editParam = {
         id: values['id'],
@@ -302,20 +376,20 @@ const PRIVILEGE_LIST: React.FC = () => {
         copyable: true,
         ellipsis: true,
         hideInSearch: true, // 在查询表单中不展示此项
-        render:  (data, record, _)=> {
-          return <span>{record.address}</span>;
-        }
+        // render:  (data, record, _)=> {
+        //   return <span>{record.address}</span>;
+        // }
       },
       {
         title: '审批人',
         key: 'user_name',
         dataIndex: 'user_name',
-        copyable: true,
+        // copyable: true,
         ellipsis: true,
         hideInSearch: true, // 在查询表单中不展示此项
-        render:  (data, record, _)=> {
-          return <span>{record.user_name}</span>;
-        }
+        // render:  (data, record, _)=> {
+        //   return <span>{record.user_name}</span>;
+        // }
       },
       {
         title: '审批次数',
@@ -367,6 +441,7 @@ const PRIVILEGE_LIST: React.FC = () => {
               type: 'edit',
               item: record,
               deptFormOptions: deptListFromServer,
+              usersFormOptions: userListFromServer,
             });
           }}>
             编辑
@@ -490,6 +565,7 @@ const PRIVILEGE_LIST: React.FC = () => {
                             type: 'new',
                             item: {},
                             deptFormOptions: deptListFromServer,
+                            usersFormOptions: userListFromServer,
                           });
                       }}
                       type="primary"

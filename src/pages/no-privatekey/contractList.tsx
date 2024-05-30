@@ -74,7 +74,7 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
     abi: '',
   }
   // extraObj.chainFormOptions[0]是全部
-  console.log('defaultV', extraObj, defaultV);
+  // console.log('defaultV', extraObj, defaultV);
   
   setTimeout(() => {
     form.setFieldsValue(defaultV);
@@ -184,6 +184,8 @@ const CONTRACT: React.FC = () => {
 
     // 弹窗2：增减特权方法
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [currId, setCurrId] = useState(0);
+    const [modalLoading, setModalLoading] = useState(false);
     const [methodList, setMethodList] = useState<RecordType[]>([]);
     const [targetKeys, setTargetKeys] = useState<string[]>([]);
     const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -260,16 +262,53 @@ const CONTRACT: React.FC = () => {
       if (writeArr && writeArr.length) {
         setMethodList(writeArr)
       }
-      
+      const targetArr = []
+      for (let key in item.privilege_methods) {
+        if (item.privilege_methods.hasOwnProperty(key)) {
+          targetArr.push(key)
+        }
+      }
+      setTargetKeys(targetArr)
+      setCurrId(item.id)
       setIsModalOpen(true);
     };
   
     const handleOk = () => {
-      setIsModalOpen(false);
+      const tmpArr = methodList.map(item => item.title)
+      const contract_methods = tmpArr.filter(item => !targetKeys.includes(item))
+      const params = {
+        id: +currId,
+        contract_methods: contract_methods,
+        privilege_methods: targetKeys
+      }
+      setModalLoading(true)
+      request.post(`${noPrivateKeyUrlPrefix}/contract/method`, {
+        data: params
+      }).then(function(response) {
+          if (response.code === 0) {
+            message.success('提交成功！');
+            actionRef.current?.reload();
+          } else if (response.code === 403) {
+            //TODO
+            message.error('登录已超时，请重新登录。');
+            history.push(LOGINPATH);
+          } else {
+            message.error('提交失败，原因：' + response.msg);
+          }
+          setIsModalOpen(false);
+          setModalLoading(false);
+        })
+        .catch(function(error) {
+          message.error('提交失败，原因：' +  error.toString());
+          setIsModalOpen(false);
+          setModalLoading(false);
+        })
     };
   
     const handleCancel = () => {
-      setIsModalOpen(false);
+      setIsModalOpen(false)
+      setMethodList([])
+      setTargetKeys([])
     };
 
     const onChange = (nextTargetKeys: string[], direction: TransferDirection, moveKeys: string[]) => {
@@ -279,6 +318,7 @@ const CONTRACT: React.FC = () => {
       setTargetKeys(nextTargetKeys);
     };
   
+    // 点击勾选框
     const onSelectChange = (sourceSelectedKeys: string[], targetSelectedKeys: string[]) => {
       console.log('sourceSelectedKeys:', sourceSelectedKeys);
       console.log('targetSelectedKeys:', targetSelectedKeys);
@@ -621,7 +661,7 @@ const CONTRACT: React.FC = () => {
               ]}
             />
 
-            <Modal title="增减特权方法" width={'600px'} open={isModalOpen} onOk={handleOk} onCancel={handleCancel}>
+            <Modal title="增减特权方法" width={'600px'} open={isModalOpen} confirmLoading={modalLoading} onOk={handleOk} onCancel={handleCancel}>
               <Transfer
                 dataSource={methodList}
                 titles={['普通方法', '特权方法']}
