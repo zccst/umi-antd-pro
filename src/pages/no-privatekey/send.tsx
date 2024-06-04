@@ -165,31 +165,19 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         <Form.Item hidden={true} name="create_time"><Input /></Form.Item>
         <Form.Item hidden={true} name="update_time"><Input /></Form.Item>
         <Form.Item hidden={true} name="abi"><Input /></Form.Item>
+        <Form.Item hidden={true} name="network_name"><Input /></Form.Item>
+        <Form.Item hidden={true} name="address"><Input /></Form.Item>
 
-        <Form.Item
-          name="name"
-          label="合约名称"
-        >
-          <Input disabled />
-        </Form.Item>
-        <Form.Item
-          name="address"
-          label="合约地址"
-        >
-          <Input disabled />
-        </Form.Item>
-        <Form.Item
-          name="network_name"
-          label="所属链"
-        >
-          <Input disabled />
-        </Form.Item>
-        <Form.Item
-          name="department_name"
-          label="所属部门"
-        >
-          <Input disabled />
-        </Form.Item>
+        <table width="100%" border={0} cellSpacing={0} cellPadding={2}>
+          <tbody>
+            <tr><td style={{width: '21%', textAlign: 'right'}}>合约名称： </td><td>{defaultV['name']}</td></tr>
+            <tr><td style={{width: '21%', textAlign: 'right'}}>合约地址： </td><td>{defaultV['address']}</td></tr>
+            <tr><td style={{width: '21%', textAlign: 'right'}}>所属链： </td><td>{defaultV['network_name']}</td></tr>
+            <tr><td style={{width: '21%', textAlign: 'right'}}>所属部门： </td><td>{defaultV['department_name']}</td></tr>
+            <tr><td></td><td style={{ visibility: 'hidden'}}>.</td></tr>
+          </tbody>
+        </table>
+        
         <Form.Item
           name="_name"
           label="任务名称"
@@ -246,6 +234,13 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
             options={privilegeAddrOptions}
           >
           </Select>
+        </Form.Item>
+
+        <Form.Item
+          name="gas_limit"
+          label="gasLimit"
+        >
+          <Input placeholder='选填，系统会自动获取gasLimit，也可手动在此输入' />
         </Form.Item>
       </Form>
     </Modal>
@@ -329,7 +324,8 @@ const SendTask: React.FC = () => {
 
   useEffect(() => {
     setWeb3Onboard(initWeb3Onboard);
-    updateAccountCenter({ minimal: false })
+    // updateAccountCenter({ minimal: false })
+    updateAccountCenter({ minimal: true }) // 2024-06-04 在此页面隐掉钱包功能
     return () => { // 处理已登录的面板
       updateAccountCenter({ minimal: true })
     }
@@ -399,31 +395,76 @@ const SendTask: React.FC = () => {
       const contractInterface = new ethers.utils.Interface(JSON.parse(abi));
       console.log('contractInterface', contractInterface, values['_method'], onChainParamValues);
       newParam['calldata'] = contractInterface.encodeFunctionData(values['_method'], onChainParamValues);
-      
-      console.log(newParam, values);
-      // return false;
+
+
+      // 计算gaslimit
+      let rpcUrl = ''
+      for (let i = 0; i < chainListFromServer.length; i++) {
+        if (chainListFromServer[i]['label'] === values['network_name']) {
+          rpcUrl = chainListFromServer[i]['rpcUrl']
+        }
+      }
+      let gas_from = ''
+      for (let i = 0; i < privilegeAddrListFromServer.length; i++) {
+        console.log(+privilegeAddrListFromServer[i]['value'], )
+        if (+privilegeAddrListFromServer[i]['value'] === +newParam['privilege_addr_id']) {
+          gas_from = privilegeAddrListFromServer[i]['address']
+        }
+      }
+      const transaction = {
+        from: gas_from,
+        to: values['address'],
+        data: newParam['calldata'],
+        value: "0x0"
+      }
+      // 参数检查
+      if (!rpcUrl || !gas_from) {
+        message.error("暂无获得计算gasLimit的rpc地址和特权地址，请填写完整再提交。")
+        return false
+      }
+      console.log('调用estimateGas前', rpcUrl, transaction, gas_from)
+
+      const gas_provider = new ethers.providers.JsonRpcProvider(rpcUrl);
+
       setConfirmLoading(true);
-      request.post(`${noPrivateKeyUrlPrefix}/contract_task${urlObj[type]}`, {
-        data: newParam,
-      })
-        .then(function(response) {
-          if (response.code === 0) {
-            message.success('提交成功！')
-            history.push('/no-privatekey/mytaskapproval');
-          } else if (response.code === 403) {
-            //TODO
-            message.error('登录已超时，请重新登录。');
-            history.push(LOGINPATH);
+      gas_provider.estimateGas(transaction)
+        .then((gasLimit: any) => {
+          const final_gas_limit = gasLimit.toString()
+          if (+values['gas_limit'] < +final_gas_limit) {
+            message.warning("您输入的gas_limit是" + values['gas_limit'] + "，小于系统估算的"+ final_gas_limit + "，因此本次交易最终使用系统的值。")
+            newParam['gas_limit'] = +final_gas_limit
           } else {
-            message.error('提交失败，原因：' + response.msg)
+            newParam['gas_limit'] = +values['gas_limit']
           }
-          setOpen(false);
-          setConfirmLoading(false);
+          console.log(newParam, values);
+          // return false;
+          request.post(`${noPrivateKeyUrlPrefix}/contract_task${urlObj[type]}`, {
+            data: newParam,
+          })
+            .then(function(response) {
+              if (response.code === 0) {
+                message.success('提交成功！')
+                history.push('/no-privatekey/mytaskapproval');
+              } else if (response.code === 403) {
+                //TODO
+                message.error('登录已超时，请重新登录。');
+                history.push(LOGINPATH);
+              } else {
+                message.error('提交失败，原因：' + response.msg)
+              }
+              setOpen(false);
+              setConfirmLoading(false);
+            })
+            .catch(function(error) {
+              console.log(error);
+              setConfirmLoading(false);
+            });
+
         })
-        .catch(function(error) {
-          console.log(error);
-          setConfirmLoading(false);
+        .catch((error: any) => {
+          console.error('Error estimating gas:', error)
         });
+
     } catch (error) {
       message.error(JSON.stringify(error))
       setConfirmLoading(false)

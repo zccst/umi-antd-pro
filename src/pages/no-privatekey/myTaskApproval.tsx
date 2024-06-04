@@ -76,9 +76,16 @@ const SendAirdrop: React.FC = () => {
   const [opType, setOpType] = useState('');
   const [taskDetail, setTaskDetail] = useState<{[key: string]: any}>({});
 
+  // show rebroadcast Modal
+  const [form2] = Form.useForm();
+  const [open2, setOpen2] = useState(false);
+  const [confirmLoading2, setConfirmLoading2] = useState(false);
+  const [taskRebroadcast, setTaskRebroadcast] = useState<{[key: string]: any}>({});
+
 
   const [chainListFromServer, setChainListFromServer] = useState([]);
   const [approvalAddrListFromServer, setApprovalAddrListFromServer] = useState<{[key: string]: any}>({});
+
 
   useEffect(() => {
     (async () => {
@@ -230,6 +237,12 @@ const SendAirdrop: React.FC = () => {
     console.log('Received values of form: ', type, values);
 
     try {
+      // 如果不是ETH主网，则切换至ETH主网
+      console.log('connectedChain?.id', connectedChain?.id);
+      if (connectedChain?.id !== '0x1') {
+        await setChain({ chainId: '0x1' });
+      }
+
       const signer = provider.getUncheckedSigner();
       // 作用域中的所有属性都是可选的
       const domain = {
@@ -321,6 +334,49 @@ const SendAirdrop: React.FC = () => {
       })
       .catch(function(error) {
         console.log(error);
+      });
+  };
+
+
+  // 重新审批
+  // 审批Modal open
+  const showRebroadcastModal = (info: any) => {
+    setOpen2(true)
+    setTaskRebroadcast(info)
+    setTimeout(() => {
+      form2.setFieldsValue(info);
+    }, 1000);
+  }
+  // 审批Modal close
+  const onRebroadcastCancel = (item: any) => {
+    setOpen2(false)
+  }
+  const handleRebroadcast = (values: any) => {
+    console.log('Rebroadcast', values);
+    // return false
+    setConfirmLoading2(true)
+    request.post(`${noPrivateKeyUrlPrefix}/contract_task/rebroadcast`, {
+      data: {
+        id: values.id,
+        gas_limit: +values.gas_limit,
+      },
+    }).then(function(response) {
+        if (response.code === 0) {
+          message.success('提交成功！')
+          actionRef.current?.reload();
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
+          history.push(LOGINPATH);
+        } else {
+          message.error('提交失败，原因：' + response.msg)
+        }
+        setConfirmLoading2(false)
+        setOpen2(false);
+      })
+      .catch(function(error) {
+        console.log(error);
+        setConfirmLoading2(false)
       });
   };
 
@@ -462,6 +518,7 @@ const SendAirdrop: React.FC = () => {
     },
     {
       title: '操作',
+      width: '172px',
       valueType: 'option',
       key: 'option',
       render: (text, record, _, action) => {
@@ -483,17 +540,25 @@ const SendAirdrop: React.FC = () => {
             审批
           </a>)
         } else {
-          <a key='approve' onClick={() => {
+          opArr.push(<a key='approve' onClick={() => {
             showDetailModal('show', record)
           }}>
             详情
-          </a>
+          </a>)
         }
         if (myName === record.apply_user_name.split("@")[0]) {
           opArr.push(<Popconfirm key="terminate" title="确定要提前终止吗" onConfirm={() => handleTerminate(record.id)}>
             <a>提前终止</a>
           </Popconfirm>)
         }
+        if ([2, 6, 7, 8].includes(record.status)) {
+          opArr.push(<a key='rebroadcast' onClick={() => {
+            showRebroadcastModal(record)
+          }}>
+            重新广播
+          </a>)
+        }
+        
         return opArr
       },
     },
@@ -685,7 +750,7 @@ const SendAirdrop: React.FC = () => {
                 .then((values) => {
                   // 参数检查，在重置前
                   if (!values['message']) {
-                    message.error("拒绝时，拒绝原因必填")
+                    message.error("拒绝审批时，拒绝原因必填")
                     return false
                   }
                   form.resetFields();
@@ -756,6 +821,9 @@ const SendAirdrop: React.FC = () => {
                 && taskDetail['approval_info'].map((item: any, index: any) => {
                 return <div key={index}>{item.status === 1 ? '未审批' : (item.status === 2 ? '审批通过(' + item.sign_time + ')' : '已拒绝(' + item.sign_time + ',' + item.message + ')')} - {item.user_name}</div>
               })}</td></tr>
+              <tr><td></td><td style={{ visibility: 'hidden'}}>.</td></tr>
+              <tr><td>gas_limit</td><td>{taskDetail['gas_limit']}</td></tr>
+              <tr><td>任务状态详情</td><td>{taskDetail['message'] ? taskDetail['message'] : '暂无(上链信息)'}</td></tr>
             </tbody>
           </table>
 
@@ -766,6 +834,51 @@ const SendAirdrop: React.FC = () => {
           >
             <Input placeholder="拒绝时必填" />
           </Form.Item>}
+
+        </Form>
+      </Modal>
+
+
+
+
+      <Modal 
+        title="重新广播"
+        confirmLoading={confirmLoading2}
+        width={660} 
+        open={open2} 
+        onCancel={onRebroadcastCancel}
+        onOk={() => {
+          form2
+            .validateFields()
+            .then((values) => {
+              if (values.gas_limit < taskRebroadcast.gas_limit) {
+                message.error("请输入一个大于" + taskRebroadcast.gas_limit + "(estimateGas估算)的值")
+                return false
+              }
+              form2.resetFields();
+              handleRebroadcast(values);
+            })
+            .catch((info) => {
+              console.log('Validate Failed:', info);
+            });
+        }}
+      >
+        <Form
+          form={form2}
+          layout="horizontal"
+          labelCol={{ span: 5 }}
+          wrapperCol={{ span: 17 }}
+          name="form_in_modal"
+          // initialValues={defaultV}
+        >
+          <Form.Item hidden={true} name="id"><Input /></Form.Item>
+
+          <Form.Item
+            name="gas_limit"
+            label="gas_limit"
+          >
+            <Input placeholder="选填，系统会自动获取gasLimit，也可手动在此输入" defaultValue={taskRebroadcast['gas_limit']} />
+          </Form.Item>
 
         </Form>
       </Modal>
