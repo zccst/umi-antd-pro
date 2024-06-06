@@ -144,7 +144,7 @@ const Login: React.FC = () => {
     if (type === OKENGINE) {
       // 发请求
       request.post(`${rootAPIURL}/login_url`, {
-        data: { redirect_uri : rootClientURL + "/user/login"},
+        data: { redirecturi : rootClientURL + "/user/login"},
       })
       .then(function(response) {
         if (response.code === 0) {
