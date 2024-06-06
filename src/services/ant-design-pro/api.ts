@@ -1,14 +1,14 @@
 // @ts-ignore
 /* eslint-disable */
 import { request } from 'umi';
-import { rootServerURL } from '../../utils/constant'
-const hostURL = rootServerURL;
+import { rootAPIURL } from '../../utils/constant'
+const hostURL = rootAPIURL;
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
     data: API.CurrentUser;
-  }>(hostURL + '/api/v1/users/info', {
+  }>(hostURL + '/users/info', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -20,7 +20,7 @@ export async function currentUser(options?: { [key: string]: any }) {
 
 /** 退出登录接口 POST /api/login/outLogin */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>(hostURL + '/api/v1/outLogin', {
+  return request<Record<string, any>>(hostURL + '/outLogin', {
     method: 'POST',
     ...(options || {}),
   });
@@ -31,7 +31,7 @@ export async function login(
   body: API.LoginParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>(hostURL + '/api/v1/login', {
+  return request<API.LoginResult>(hostURL + '/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -41,12 +41,12 @@ export async function login(
   });
 }
 
-/** 重置密码接口 POST /api/v1/users/changepassword */
+/** 重置密码接口 POST /users/changepassword */
 export async function changePassword(
   body: API.ChangepwdParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>(hostURL + '/api/v1/users/changepassword', {
+  return request<API.LoginResult>(hostURL + '/users/changepassword', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -61,7 +61,7 @@ export async function changePassword(
 export async function getChains(options?: { [key: string]: any }) {
   return request<{
     data: API.Chain;
-  }>(hostURL + '/api/v1/chain/list', {
+  }>(hostURL + '/chain/list', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
