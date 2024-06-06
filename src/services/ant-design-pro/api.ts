@@ -1,7 +1,8 @@
 // @ts-ignore
 /* eslint-disable */
 import { request } from 'umi';
-const hostURL = "http://44.238.134.212:8020";
+import { rootServerURL } from '../../utils/constant'
+const hostURL = rootServerURL;
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {

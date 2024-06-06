@@ -1,39 +1,42 @@
 /**
  * 常量
  */
-// const rootURL = `${location.protocol}//${location.hostname}:${location.port}/api/v1`;
-export const rootURL = "http://44.238.134.212:8020/api/v1";
+export const rootServerURL = "http://44.238.134.212:8020/";
+export const rootClientURL = `${location.protocol}//${location.hostname}:${location.port}/`;
+// const rootAPIURL = `${location.protocol}//${location.hostname}:${location.port}/api/v1`;
+export const rootAPIURL = "http://44.238.134.212:8020/api/v1";
+
 
 // 部门和项目列表
-export const deptProjUrl = rootURL + "/project/list";
+export const deptProjUrl = rootAPIURL + "/project/list";
 
 // call页
-export const getProjListUrl = rootURL + "/dept/project"; // 获取项目列表
-export const getAbiInfoUrl = rootURL + "/abi/info"; // 获取abi信息，主要是读写方法
+export const getProjListUrl = rootAPIURL + "/dept/project"; // 获取项目列表
+export const getAbiInfoUrl = rootAPIURL + "/abi/info"; // 获取abi信息，主要是读写方法
 
 // abi和addr管理页
-export const abiUrlPrefix = rootURL + "/abi"; // abi管理页的URL前缀
-export const addrUrlPrefix = rootURL + "/addr"; // address管理页的URL前缀
+export const abiUrlPrefix = rootAPIURL + "/abi"; // abi管理页的URL前缀
+export const addrUrlPrefix = rootAPIURL + "/addr"; // address管理页的URL前缀
 
 // 项目管理页
-export const projUrlPrefix = rootURL + "/project"; // create / delete / access_list / update
+export const projUrlPrefix = rootAPIURL + "/project"; // create / delete / access_list / update
 
 // 链管理
-export const chainUrlPrefix = rootURL + "/chain"; // create / delete / access_list / update
+export const chainUrlPrefix = rootAPIURL + "/chain"; // create / delete / access_list / update
 
 // 用户管理
-export const userUrlPrefix = rootURL + "/users"; // create / delete / access_list / update
+export const userUrlPrefix = rootAPIURL + "/users"; // create / delete / access_list / update
 
 export const LOGINPATH = '/user/login';
 
 // version2 新合约create2部署
-export const create2UrlPrefix = rootURL + "/create2"; // create / delete / access_list / update
+export const create2UrlPrefix = rootAPIURL + "/create2"; // create / delete / access_list / update
 
 // version3 批量空投
-export const batchAirdropUrlPrefix = rootURL + "/airdrop";
+export const batchAirdropUrlPrefix = rootAPIURL + "/airdrop";
 
 // v4
-export const noPrivateKeyUrlPrefix = rootURL + "/nopri";
+export const noPrivateKeyUrlPrefix = rootAPIURL + "/nopri";
 
 // 空投类型列表 2024-04-09
 export const AIRDROP_TYPE_LIST = [

@@ -21,7 +21,7 @@ import React, { useState, useEffect } from 'react';
 import { FormattedMessage, history, SelectLang, useIntl, useModel } from 'umi';
 import styles from './index.less';
 import request from '../../../utils/req';
-import { LOGINPATH, OKENGINE, rootURL } from '../../../utils/constant'
+import { LOGINPATH, OKENGINE, rootAPIURL, rootClientURL } from '../../../utils/constant'
 
 import { getChains } from '@/services/ant-design-pro/api';
 
@@ -51,6 +51,9 @@ const Login: React.FC = () => {
 
       const queryURLObj: any = new URLSearchParams(window.location.search);
       const authcode = queryURLObj.get("authCode") || '';
+      if (!authcode) {
+        return false
+      }
 
       try {
         // 登录
@@ -140,8 +143,8 @@ const Login: React.FC = () => {
 
     if (type === OKENGINE) {
       // 发请求
-      request.post(`${rootURL}/login_url`, {
-        data: { redirect_uri : rootURL + "/user/login"},
+      request.post(`${rootAPIURL}/login_url`, {
+        data: { redirect_uri : rootClientURL + "/user/login"},
       })
       .then(function(response) {
         if (response.code === 0) {
