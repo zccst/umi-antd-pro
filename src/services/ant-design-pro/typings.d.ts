@@ -79,6 +79,7 @@ declare namespace API {
     username?: string;
     password?: string;
     autoLogin?: boolean;
+    authcode?: string;
     type?: string;
   };
 

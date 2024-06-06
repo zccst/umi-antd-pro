@@ -17,7 +17,7 @@ import {
 } from '@ant-design/pro-components';
 import { Alert, message, Tabs } from 'antd';
 import { parse } from 'querystring';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FormattedMessage, history, SelectLang, useIntl, useModel } from 'umi';
 import styles from './index.less';
 import request from '../../../utils/req';
@@ -46,6 +46,85 @@ const Login: React.FC = () => {
 
   const intl = useIntl();
 
+  useEffect(() => {
+    (async () => {
+
+      const queryURLObj: any = new URLSearchParams(window.location.search);
+      const authcode = queryURLObj.get("authCode") || '';
+
+      try {
+        // 登录
+        const response = await login({ authcode, type });
+        console.log('登录请求后', response);
+        if (response.code === 0) {
+          // 先设置token
+          window.localStorage.setItem('token', response.data.token);
+  
+          await fetchUserInfo(); // 获取用户信息需要token
+  
+          const result = await getChains();
+          let finalChain = [];
+          if ( result.code === 0) {
+              console.log('login page getChains', result.data);
+              finalChain = result.data.map((item: any) => {
+                  return {
+                      id: item.chain_id,
+                      token: item.token,
+                      label: item.name,
+                      rpcUrl: item.rpc,
+                  }
+              });
+          }
+          localStorage.setItem('GLOBAL_CHAINS', JSON.stringify(finalChain));
+          
+          const defaultLoginSuccessMessage = intl.formatMessage({
+            id: 'pages.login.success',
+            defaultMessage: '登录成功！',
+          });
+          message.success(defaultLoginSuccessMessage);
+  
+          // console.log(initialState);
+          // return false
+  
+          
+          /** 此方法会跳转到 redirect 参数所在的位置 */
+          if (!history) return;
+  
+          const query = parse(history.location.search ? history.location.search.substr(1) : history.location.search);
+          const { redirect } = query as { redirect: string };
+  
+          // const { query = {}, search, pathname } = history.location;
+  
+          console.log('跳转前', query, redirect);
+          // 跳转
+          if (redirect) {
+            console.log('进到redirect');
+            // history.push(redirect);
+            window.location.href = redirect;
+          } else {
+            console.log('//////');
+            // history.push('/');
+            window.location.href = '/'
+          }
+          return;
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
+        } else {
+          message.error('登录失败，原因：' + response.msg);
+        }
+        // 如果失败去设置用户错误信息
+        setUserLoginState(response);
+      } catch (error) {
+        const defaultLoginFailureMessage = intl.formatMessage({
+          id: 'pages.login.failure',
+          defaultMessage: '登录失败，请重试！',
+        });
+        message.error(defaultLoginFailureMessage);
+      }
+    })()
+  }, []);
+
   const fetchUserInfo = async () => {
     const userInfo = await initialState?.fetchUserInfo?.();
     if (userInfo) {
@@ -62,7 +141,7 @@ const Login: React.FC = () => {
     if (type === OKENGINE) {
       // 发请求
       request.post(`${rootURL}/login_url`, {
-        data: { redirect_uri : ""},
+        data: { redirect_uri : rootURL + "/user/login"},
       })
       .then(function(response) {
         if (response.code === 0) {
@@ -75,78 +154,77 @@ const Login: React.FC = () => {
       .catch(function(error) {
         console.log(error);
       });
-    } 
-
-
-    try {
-      // 登录
-      const response = await login({ ...values, type });
-      console.log('登录请求后', response);
-      if (response.code === 0) {
-        // 先设置token
-        window.localStorage.setItem('token', response.data.token);
-
-        await fetchUserInfo(); // 获取用户信息需要token
-
-        const result = await getChains();
-        let finalChain = [];
-        if ( result.code === 0) {
-            console.log('login page getChains', result.data);
-            finalChain = result.data.map((item: any) => {
-                return {
-                    id: item.chain_id,
-                    token: item.token,
-                    label: item.name,
-                    rpcUrl: item.rpc,
-                }
-            });
-        }
-        localStorage.setItem('GLOBAL_CHAINS', JSON.stringify(finalChain));
-        
-        const defaultLoginSuccessMessage = intl.formatMessage({
-          id: 'pages.login.success',
-          defaultMessage: '登录成功！',
-        });
-        message.success(defaultLoginSuccessMessage);
-
-        // console.log(initialState);
-        // return false
-
-        
-        /** 此方法会跳转到 redirect 参数所在的位置 */
-        if (!history) return;
-
-        const query = parse(history.location.search ? history.location.search.substr(1) : history.location.search);
-        const { redirect } = query as { redirect: string };
-
-        // const { query = {}, search, pathname } = history.location;
-
-        console.log('跳转前', query, redirect);
-        // 跳转
-        if (redirect) {
-          console.log('进到redirect');
-          // history.push(redirect);
-          window.location.href = redirect;
+    } else {
+      try {
+        // 登录
+        const response = await login({ ...values, type });
+        console.log('登录请求后', response);
+        if (response.code === 0) {
+          // 先设置token
+          window.localStorage.setItem('token', response.data.token);
+  
+          await fetchUserInfo(); // 获取用户信息需要token
+  
+          const result = await getChains();
+          let finalChain = [];
+          if ( result.code === 0) {
+              console.log('login page getChains', result.data);
+              finalChain = result.data.map((item: any) => {
+                  return {
+                      id: item.chain_id,
+                      token: item.token,
+                      label: item.name,
+                      rpcUrl: item.rpc,
+                  }
+              });
+          }
+          localStorage.setItem('GLOBAL_CHAINS', JSON.stringify(finalChain));
+          
+          const defaultLoginSuccessMessage = intl.formatMessage({
+            id: 'pages.login.success',
+            defaultMessage: '登录成功！',
+          });
+          message.success(defaultLoginSuccessMessage);
+  
+          // console.log(initialState);
+          // return false
+  
+          
+          /** 此方法会跳转到 redirect 参数所在的位置 */
+          if (!history) return;
+  
+          const query = parse(history.location.search ? history.location.search.substr(1) : history.location.search);
+          const { redirect } = query as { redirect: string };
+  
+          // const { query = {}, search, pathname } = history.location;
+  
+          console.log('跳转前', query, redirect);
+          // 跳转
+          if (redirect) {
+            console.log('进到redirect');
+            // history.push(redirect);
+            window.location.href = redirect;
+          } else {
+            console.log('//////');
+            // history.push('/');
+            window.location.href = '/'
+          }
+          return;
+        } else if (response.code === 403) {
+          //TODO
+          message.error('登录已超时，请重新登录。');
         } else {
-          console.log('//////');
-          // history.push('/');
-          window.location.href = '/'
+          message.error('登录失败，原因：' + response.msg);
         }
-        return;
-      } else if (response.code === 403) {
-        //TODO
-        message.error('登录已超时，请重新登录。');
-      } else {
-        message.error('登录失败，原因：' + response.msg);
+        // 如果失败去设置用户错误信息
+        setUserLoginState(response);
+      } catch (error) {
+        const defaultLoginFailureMessage = intl.formatMessage({
+          id: 'pages.login.failure',
+          defaultMessage: '登录失败，请重试！',
+        });
+        message.error(defaultLoginFailureMessage);
       }
-      // 如果失败去设置用户错误信息
-      setUserLoginState(response);
-    } catch (error) {
-      const defaultLoginFailureMessage = intl.formatMessage({
-        id: 'pages.login.failure',
-        defaultMessage: '登录失败，请重试！',
-      });
-      message.error(defaultLoginFailureMessage);
     }
   };
   const { status, type: loginType } = userLoginState;
