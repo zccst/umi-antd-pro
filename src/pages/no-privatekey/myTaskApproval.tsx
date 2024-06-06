@@ -258,19 +258,22 @@ const SendAirdrop: React.FC = () => {
         Transaction: [
             { name: 'from', type: 'address' },
             { name: 'to', type: 'address' },
-            { name: 'calldata', type: 'bytes' },
+            { name: 'value', type: 'string' },
+            { name: 'calldata', type: 'bytes' }
         ],
       };
 
       // 测试验证
       // const value = {
-      //   from: "0xe1c7db7575babf0d3369835678ec9b7f15c0886b", // 特权地址
-      //   to: "0xFc99f58A8974A4bc36e60E2d490Bb8D72899ee9f", // 合约地址
-      //   calldata: "0x704b6c02000000000000000000000000e1c7db7575babf0d3369835678ec9b7f15c0886b"
+      //   from: '0xe1c7db7575babf0d3369835678ec9b7f15c0886b', // 特权地址
+      //   to: '0xFc99f58A8974A4bc36e60E2d490Bb8D72899ee9f', // 合约地址
+      //   value: '0',
+      //   calldata: '0x704b6c02000000000000000000000000e1c7db7575babf0d3369835678ec9b7f15c0886b'
       // };
       const value = {
         from: values['method_privilege_addr'], // 特权地址
         to: values['contract_address'], // 合约地址
+        value: values['value'],
         calldata: values['calldata']
       };
       const signature = await signer._signTypedData(domain, types, value);
@@ -282,7 +285,7 @@ const SendAirdrop: React.FC = () => {
       }
       console.log('通过newParam', newParam);
 
-      // return false
+      return false
       setConfirmLoading(true);
       request.post(`${noPrivateKeyUrlPrefix}/contract_task/approve`, {
         data: newParam,
@@ -551,7 +554,7 @@ const SendAirdrop: React.FC = () => {
             <a>提前终止</a>
           </Popconfirm>)
         }
-        if ([2, 6, 7, 8].includes(record.status)) {
+        if ([6, 7, 8].includes(record.status)) {
           opArr.push(<a key='rebroadcast' onClick={() => {
             showRebroadcastModal(record)
           }}>
@@ -798,6 +801,7 @@ const SendAirdrop: React.FC = () => {
           <Form.Item hidden={true} name="network_id"><Input /></Form.Item>
           <Form.Item hidden={true} name="contract_address"><Input /></Form.Item>
           <Form.Item hidden={true} name="method_privilege_addr"><Input /></Form.Item>
+          <Form.Item hidden={true} name="value"><Input /></Form.Item>
           
           <table width="100%" border={0} cellSpacing={0} cellPadding={2}>
             <tbody>

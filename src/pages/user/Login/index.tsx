@@ -20,7 +20,8 @@ import { parse } from 'querystring';
 import React, { useState } from 'react';
 import { FormattedMessage, history, SelectLang, useIntl, useModel } from 'umi';
 import styles from './index.less';
-import { LOGINPATH } from '../../../utils/constant'
+import request from '../../../utils/req';
+import { LOGINPATH, OKENGINE, rootURL } from '../../../utils/constant'
 
 import { getChains } from '@/services/ant-design-pro/api';
 
@@ -40,7 +41,7 @@ const LoginMessage: React.FC<{
 
 const Login: React.FC = () => {
   const [userLoginState, setUserLoginState] = useState<API.LoginResult>({});
-  const [type, setType] = useState<string>('account');
+  const [type, setType] = useState<string>(OKENGINE);
   const { initialState, setInitialState } = useModel('@@initialState');
 
   const intl = useIntl();
@@ -56,6 +57,27 @@ const Login: React.FC = () => {
   };
 
   const handleSubmit = async (values: API.LoginParams) => {
+    console.log('提交参数：', type, values);
+
+    if (type === OKENGINE) {
+      // 发请求
+      request.post(`${rootURL}/login_url`, {
+        data: { redirect_uri : ""},
+      })
+      .then(function(response) {
+        if (response.code === 0) {
+          // 重定向
+          window.location.href = response.data.url
+        } else {
+          message.error('提交失败，原因：' + response.msg);
+        }
+      })
+      .catch(function(error) {
+        console.log(error);
+      });
+    } 
+
+
     try {
       // 登录
       const response = await login({ ...values, type });
@@ -86,6 +108,9 @@ const Login: React.FC = () => {
           defaultMessage: '登录成功！',
         });
         message.success(defaultLoginSuccessMessage);
+
+        // console.log(initialState);
+        // return false
 
         
         /** 此方法会跳转到 redirect 参数所在的位置 */
@@ -172,6 +197,13 @@ const Login: React.FC = () => {
                 defaultMessage: '账户密码登录',
               })}
             />
+            <Tabs.TabPane
+              key="okengine"
+              tab={intl.formatMessage({
+                id: 'pages.login.okengine.tab',
+                defaultMessage: 'OKEngine登录',
+              })}
+            />
             {/* <Tabs.TabPane
               key="mobile"
               tab={intl.formatMessage({
@@ -240,6 +272,9 @@ const Login: React.FC = () => {
 
           {status === 'error' && loginType === 'mobile' && (
             <LoginMessage content="验证码错误" />
+          )}
+          {type === OKENGINE && (
+            <div style={{ paddingBottom: "50px"}}>点击登录按钮，会跳转到OKEngine登陆页。</div>
           )}
           {type === 'mobile' && (
             <>
@@ -338,10 +373,10 @@ const Login: React.FC = () => {
                 float: 'right',
               }}
             >
-              <FormattedMessage
+              {type === 'account' && <FormattedMessage
                 id="pages.login.forgotPassword"
                 defaultMessage="忘记密码？请联系管理员重置"
-              />
+              />}
             </a>
           </div>
         </LoginForm>

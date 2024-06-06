@@ -219,6 +219,13 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         </Form.Item>
 
         <Form.Item
+          name="value"
+          label="value"
+        >
+          <Input placeholder='选填，默认0，填 0.1 表示 0.1 ETH' />
+        </Form.Item>
+
+        <Form.Item
           name="last_use"
           label="上次使用的特权地址"
         >
@@ -387,6 +394,7 @@ const SendTask: React.FC = () => {
       method: values['_method'],
       privilege_addr_id: +values['_privilege_addr_id'],
       params: contractParams,
+      value: values['value'] || "0"
     }
 
     
@@ -415,7 +423,7 @@ const SendTask: React.FC = () => {
         from: gas_from,
         to: values['address'],
         data: newParam['calldata'],
-        value: "0x0"
+        value: newParam['value']
       }
       // 参数检查
       if (!rpcUrl || !gas_from) {

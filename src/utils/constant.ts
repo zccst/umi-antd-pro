@@ -2,7 +2,7 @@
  * 常量
  */
 // const rootURL = `${location.protocol}//${location.hostname}:${location.port}/api/v1`;
-const rootURL = "http://44.238.134.212:8020/api/v1";
+export const rootURL = "http://44.238.134.212:8020/api/v1";
 
 // 部门和项目列表
 export const deptProjUrl = rootURL + "/project/list";
@@ -126,6 +126,7 @@ export const CHAIN_LIST = global_chains.map((item: any) => {
 
 
 
-
+// 2024-06-06 添加OKEngine登录
+export const OKENGINE = 'okengine'
 
 
