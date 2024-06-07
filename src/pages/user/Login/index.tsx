@@ -15,16 +15,19 @@ import {
   ProFormCheckbox,
   ProFormText,
 } from '@ant-design/pro-components';
-import { Alert, message, Tabs } from 'antd';
+import { Alert, message, Tabs, Spin } from 'antd';
 import { parse } from 'querystring';
 import React, { useState, useEffect } from 'react';
 import { FormattedMessage, history, SelectLang, useIntl, useModel } from 'umi';
 import styles from './index.less';
 import request from '../../../utils/req';
-import { LOGINPATH, OKENGINE, rootAPIURL, rootClientURL } from '../../../utils/constant'
+import { LOGINPATH, OKENGINE, rootAPIURL } from '../../../utils/constant'
 
 import { getChains } from '@/services/ant-design-pro/api';
 
+
+const queryURLObj: any = new URLSearchParams(window.location.search);
+const authcode = queryURLObj.get("authCode") || '';
 
 const LoginMessage: React.FC<{
   content: string;
@@ -48,9 +51,6 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-
-      const queryURLObj: any = new URLSearchParams(window.location.search);
-      const authcode = queryURLObj.get("authCode") || '';
       if (!authcode) {
         return false
       }
@@ -142,9 +142,14 @@ const Login: React.FC = () => {
     console.log('提交参数：', type, values);
 
     if (type === OKENGINE) {
+      if (authcode) {
+        message.warning("Loading进行中，请等待...")
+        return false
+      }
+      const redirectClientURL = `${location.protocol}//${location.hostname}:${location.port}/user/login`;
       // 发请求
       request.post(`${rootAPIURL}/login_url`, {
-        data: { redirecturi : rootClientURL + "/user/login"},
+        data: { redirecturi : redirectClientURL},
       })
       .then(function(response) {
         if (response.code === 0) {
@@ -355,7 +360,8 @@ const Login: React.FC = () => {
             <LoginMessage content="验证码错误" />
           )}
           {type === OKENGINE && (
-            <div style={{ paddingBottom: "50px"}}>点击登录按钮，会跳转到OKEngine登陆页。</div>
+            authcode ? <div style={{ paddingBottom: "50px"}}><Spin size="large" /> Loading进行中，请等待...</div>
+            : <div style={{ paddingBottom: "50px"}}>点击登录按钮，会跳转到OKEngine登陆页。</div>
           )}
           {type === 'mobile' && (
             <>

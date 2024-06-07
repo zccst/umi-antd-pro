@@ -8,7 +8,7 @@ export default function access(initialState: {
 
   console.log();
   return {
-    canAdmin: currentUser && currentUser.depts[0].access === "SUPER_ADMIN",
+    canAdmin: currentUser && currentUser.depts && currentUser.depts[0].access === "SUPER_ADMIN",
     // canAdmin: true,
   };
 }

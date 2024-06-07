@@ -1,10 +1,8 @@
 /**
  * 常量
  */
-export const rootServerURL = "http://44.238.134.212:8020/";
-export const rootClientURL = `${location.protocol}//${location.hostname}:${location.port}/`;
+export const rootAPIURL = "http://44.238.134.212:8020/api/v1";
 // const rootAPIURL = `${location.protocol}//${location.hostname}:${location.port}/api/v1`;
-export const rootAPIURL = rootServerURL + "api/v1";
 
 
 // 部门和项目列表

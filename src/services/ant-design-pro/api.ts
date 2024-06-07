@@ -2,13 +2,12 @@
 /* eslint-disable */
 import { request } from 'umi';
 import { rootAPIURL } from '../../utils/constant'
-const hostURL = rootAPIURL;
 
 /** 获取当前的用户 GET /api/currentUser */
 export async function currentUser(options?: { [key: string]: any }) {
   return request<{
     data: API.CurrentUser;
-  }>(hostURL + '/users/info', {
+  }>(rootAPIURL + '/users/info', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
@@ -20,7 +19,7 @@ export async function currentUser(options?: { [key: string]: any }) {
 
 /** 退出登录接口 POST /api/login/outLogin */
 export async function outLogin(options?: { [key: string]: any }) {
-  return request<Record<string, any>>(hostURL + '/outLogin', {
+  return request<Record<string, any>>(rootAPIURL + '/outLogin', {
     method: 'POST',
     ...(options || {}),
   });
@@ -31,7 +30,7 @@ export async function login(
   body: API.LoginParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>(hostURL + '/login', {
+  return request<API.LoginResult>(rootAPIURL + '/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -46,7 +45,7 @@ export async function changePassword(
   body: API.ChangepwdParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.LoginResult>(hostURL + '/users/changepassword', {
+  return request<API.LoginResult>(rootAPIURL + '/users/changepassword', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -61,7 +60,7 @@ export async function changePassword(
 export async function getChains(options?: { [key: string]: any }) {
   return request<{
     data: API.Chain;
-  }>(hostURL + '/chain/list', {
+  }>(rootAPIURL + '/chain/list', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
