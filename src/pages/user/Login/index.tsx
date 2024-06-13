@@ -360,8 +360,8 @@ const Login: React.FC = () => {
             <LoginMessage content="验证码错误" />
           )}
           {type === OKENGINE && (
-            authcode ? <div style={{ paddingBottom: "50px"}}><Spin size="large" /> Loading进行中，请等待...</div>
-            : <div style={{ paddingBottom: "50px"}}>点击登录按钮，会跳转到OKEngine登陆页。</div>
+            authcode ? <div style={{ paddingBottom: "50px"}}><Spin size="large" /> &nbsp;&nbsp; Loading进行中，请等待...</div>
+            : <div style={{ paddingBottom: "50px"}}>点击登录按钮，会自动跳转到OKEngine登陆页。</div>
           )}
           {type === 'mobile' && (
             <>

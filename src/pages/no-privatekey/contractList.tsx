@@ -212,7 +212,7 @@ const CONTRACT: React.FC = () => {
               id: item.id,
               token: item.token,
               label: item.name,
-              value: item.id,
+              value: '' + item.id,
               rpcUrl: item.rpc,
             }
           });
@@ -526,7 +526,7 @@ const CONTRACT: React.FC = () => {
             setExtraObj({
               type: 'edit',
               item: record,
-              chainFormOptions: deptListFromServer,
+              chainFormOptions: chainListFromServer,
               deptFormOptions: deptListFromServer,
             });
           }}>

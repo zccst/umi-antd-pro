@@ -50,7 +50,7 @@ interface CollectionCreateFormProps {
   open: boolean;
   confirmLoading: boolean;
   extraObj: {[key: string]: any};
-  onCreate: (type: string, values: ContractItem) => void;
+  onCreate: (type: string, values: ContractItem, callback: any) => void;
   onCancel: () => void;
 }
 
@@ -143,8 +143,9 @@ const CollectionCreateForm: React.FC<CollectionCreateFormProps> = ({
         form
           .validateFields()
           .then((values) => {
-            form.resetFields();
-            onCreate(extraObj.type, values);
+            onCreate(extraObj.type, values, () => {
+              form.resetFields();
+            });
           })
           .catch((info) => {
             console.log('Validate Failed:', info);
@@ -372,7 +373,7 @@ const SendTask: React.FC = () => {
   }, [wallet])
 
 
-  const onCreate = async(type: any, values: any) => {
+  const onCreate = async(type: any, values: any, callback: any) => {
     // console.log(initialState.currentUser);
     console.log('Received values of form: ', type, values);
     const urlObj: any = {
@@ -460,6 +461,7 @@ const SendTask: React.FC = () => {
               } else {
                 message.error('提交失败，原因：' + response.msg)
               }
+              callback()
               setOpen(false);
               setConfirmLoading(false);
             })
@@ -467,14 +469,15 @@ const SendTask: React.FC = () => {
               console.log(error);
               setConfirmLoading(false);
             });
-
         })
         .catch((error: any) => {
+          message.error('获取预估Gas出错，请重试或检查rpc是否正确，' + error.message)
+          setConfirmLoading(false);
           console.error('Error estimating gas:', error)
         });
 
-    } catch (error) {
-      message.error(JSON.stringify(error))
+    } catch (error: any) {
+      message.error(error.message)
       setConfirmLoading(false)
     }
 

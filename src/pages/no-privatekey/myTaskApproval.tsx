@@ -24,7 +24,7 @@ import { Suspense, useState, useEffect, useRef } from 'react';
 import { history, useModel, Link } from 'umi';
 import request from '../../utils/req';
 import { noPrivateKeyUrlPrefix, LOGINPATH } from '../../utils/constant'
-
+import { truncateEthAddress } from '../../utils/utils';
 import { getChains } from '@/services/ant-design-pro/api';
 
 type TaskItem = {
@@ -285,7 +285,7 @@ const SendAirdrop: React.FC = () => {
       }
       console.log('通过newParam', newParam);
 
-      return false
+      // return false
       setConfirmLoading(true);
       request.post(`${noPrivateKeyUrlPrefix}/contract_task/approve`, {
         data: newParam,
@@ -383,6 +383,7 @@ const SendAirdrop: React.FC = () => {
       });
   };
 
+
   const onAlertClose = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     console.log(e, 'I was closed.');
   };
@@ -397,6 +398,9 @@ const SendAirdrop: React.FC = () => {
       hideInTable: true, // 在 Table 中不展示此列
       renderFormItem: (item, { type, defaultRender }, form) => {
         return <Select 
+          onChange={()=> {
+            form?.submit()
+          }}
           defaultValue={'my_task'}
           options={[{ label: '我发起的', value: 'my_task'}, { label: '待审批', value: 'my_under_approve'} ]}
         >
@@ -483,6 +487,16 @@ const SendAirdrop: React.FC = () => {
       key: 'approval_status',
       dataIndex: 'approval_status',
       hideInSearch: true, // 在查询表单中不展示此项
+      render: (text, record, _, action)=> {
+        const myName = initialState.currentUser.name
+        let isApproved = ''
+        record.approval_info.map((item: any) => {
+          if (item.user_name.split("@")[0] === myName && +item.status > 1) {
+            isApproved = '(我已批)'
+          }
+        })
+        return record.approval_status + isApproved
+      },
     },
     {
       title: '任务状态',
@@ -496,9 +510,9 @@ const SendAirdrop: React.FC = () => {
       },
     },
     {
-      title: '最后修改时间',
-      key: 'update_time',
-      dataIndex: 'update_time',
+      title: '创建时间',
+      key: 'create_time',
+      dataIndex: 'create_time',
       valueType: 'dateTime',
       sorter: true,
       hideInSearch: true, // 在查询表单中不展示此项
@@ -529,14 +543,23 @@ const SendAirdrop: React.FC = () => {
         // 如果是本人，则签名
         const myDept = initialState.currentUser.depts[0].name
         const myName = initialState.currentUser.name
+        // 1. 当前用户是审批人
+        let isNeedApproval = false
         const myDeptApprovals = approvalAddrListFromServer[myDept]
-        let isNeedSign = false
         myDeptApprovals && myDeptApprovals.map((item: any) => {
           if (item.user_name.split("@")[0] === myName) {
-            isNeedSign = true
+            isNeedApproval = true
           }
         })
-        if (isNeedSign) {
+        // 2. 当前用户未审批
+        let isUnapproved = false
+        record.approval_info.map((item: any) => {
+          if (item.user_name.split("@")[0] === myName && +item.status === 1) {
+            isUnapproved = true
+          }
+        })
+
+        if (isNeedApproval && isUnapproved) {
           opArr.push(<a key='approve' onClick={() => {
             showDetailModal('approve', record)
           }}>
@@ -775,7 +798,25 @@ const SendAirdrop: React.FC = () => {
                     message.warning("请先关闭弹窗，在表格右上方找到'连接钱包'按钮，连接钱包。");
                     return false
                   }
-
+                  // 检查插件钱包地址，与审批地址是否一致，如果不一致提示切换
+                  const myDept = initialState.currentUser.depts[0].name
+                  const myName = initialState.currentUser.name
+                  let input_addr = ''
+                  const myDeptApprovals = approvalAddrListFromServer[myDept]
+                  myDeptApprovals && myDeptApprovals.map((item: any) => {
+                    if (item.user_name.split("@")[0] === myName) {
+                      input_addr = item.address
+                    }
+                  })
+                  if (!wallet.accounts) {
+                    message.error("请在插件钱包中连接一个你的账号地址。")
+                    return false
+                  }
+                  if (wallet.accounts[0].address !== input_addr) {
+                    message.error("您当前连接的插件钱包地址(" + truncateEthAddress(wallet.accounts[0].address) + ")与审批地址(" + truncateEthAddress(input_addr) + ")不一致。")
+                    return false
+                  }
+                  
                   form.resetFields();
                   onApproval(opType, values);
                 })
@@ -809,7 +850,9 @@ const SendAirdrop: React.FC = () => {
               <tr><td>合约地址</td><td>{taskDetail['contract_address']}</td></tr>
               <tr><td>所属链</td><td>{taskDetail['network_name']}</td></tr>
               <tr><td>所属部门</td><td>{taskDetail['department_name']}</td></tr>
+              <tr><td>任务ID</td><td><strong>{taskDetail['uuid']}</strong></td></tr>
               <tr><td>任务名称</td><td>{taskDetail['name']}</td></tr>
+              <tr><td>最后更新</td><td>{taskDetail['update_time']}</td></tr>
               <tr><td></td><td style={{ visibility: 'hidden'}}>.</td></tr>
               <tr><td>特权方法</td><td>{taskDetail['method_name']}</td></tr>
               <tr><td>特权地址</td><td>{taskDetail['method_privilege_addr']}</td></tr>
@@ -823,11 +866,11 @@ const SendAirdrop: React.FC = () => {
               <tr><td>审批详情</td><td>{taskDetail['approval_info']
                 && taskDetail['approval_info'].length
                 && taskDetail['approval_info'].map((item: any, index: any) => {
-                return <div key={index}>{item.status === 1 ? '未审批' : (item.status === 2 ? '审批通过(' + item.sign_time + ')' : '已拒绝(' + item.sign_time + ',' + item.message + ')')} - {item.user_name}</div>
+                return <div key={index}>{item.status === 1 ? '未审批' : (item.status === 2 ? '已通过(' + item.sign_time + ')' : '已拒绝(' + item.sign_time + ',' + item.message + ')')} - {item.name}</div>
               })}</td></tr>
               <tr><td></td><td style={{ visibility: 'hidden'}}>.</td></tr>
               <tr><td>gas_limit</td><td>{taskDetail['gas_limit']}</td></tr>
-              <tr><td>任务状态详情</td><td>{taskDetail['message'] ? taskDetail['message'] : '暂无(上链信息)'}</td></tr>
+              <tr><td>上链状态</td><td>{taskDetail['message'] ? taskDetail['message'] : '暂无'}</td></tr>
             </tbody>
           </table>
 

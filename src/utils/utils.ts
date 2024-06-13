@@ -8,3 +8,7 @@
 export function shortenAddress(address: string, chars = 4): string {
     return address ? `${address.substring(0, chars + 2)}...${address.substring(42 - chars)}` : '';
 }
+
+export function truncateEthAddress(address: string, length = 4) {
+    return `${address.slice(0, length)}...${address.slice(-length)}`;
+}

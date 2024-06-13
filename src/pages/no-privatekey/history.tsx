@@ -445,7 +445,9 @@ const SendAirdrop: React.FC = () => {
               <tr><td>合约地址</td><td>{taskDetail['contract_address']}</td></tr>
               <tr><td>所属链</td><td>{taskDetail['network_name']}</td></tr>
               <tr><td>所属部门</td><td>{taskDetail['department_name']}</td></tr>
+              <tr><td>任务ID</td><td><strong>{taskDetail['uuid']}</strong></td></tr>
               <tr><td>任务名称</td><td>{taskDetail['name']}</td></tr>
+              <tr><td>最后更新</td><td>{taskDetail['update_time']}</td></tr>
               <tr><td></td><td style={{ visibility: 'hidden'}}>.</td></tr>
               <tr><td>特权方法</td><td>{taskDetail['method_name']}</td></tr>
               <tr><td>特权地址</td><td>{taskDetail['method_privilege_addr']}</td></tr>
@@ -459,8 +461,11 @@ const SendAirdrop: React.FC = () => {
               <tr><td>审批详情</td><td>{taskDetail['approval_info']
                 && taskDetail['approval_info'].length
                 && taskDetail['approval_info'].map((item: any, index: any) => {
-                return <div key={index}>{item.status === 1 ? '未审批' : (item.status === 2 ? '审批通过(' + item.sign_time + ')' : '已拒绝(' + item.sign_time + ',' + item.message + ')')} - {item.user_name}</div>
+                return <div key={index}>{item.status === 1 ? '未审批' : (item.status === 2 ? '已通过(' + item.sign_time + ')' : '已拒绝(' + item.sign_time + ',' + item.message + ')')} - {item.name}</div>
               })}</td></tr>
+              <tr><td></td><td style={{ visibility: 'hidden'}}>.</td></tr>
+              <tr><td>gas_limit</td><td>{taskDetail['gas_limit']}</td></tr>
+              <tr><td>上链状态</td><td>{taskDetail['message'] ? taskDetail['message'] : '暂无'}</td></tr>
             </tbody>
           </table>
 
