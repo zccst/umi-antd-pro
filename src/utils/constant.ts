@@ -116,7 +116,7 @@ export const LOCAL_CHAIN_LIST = [
     }
 ];
 // 公链列表，改为动态获取
-const global_chains = JSON.parse(localStorage.getItem('GLOBAL_CHAINS') || '') || LOCAL_CHAIN_LIST;
+const global_chains = (localStorage.getItem('GLOBAL_CHAINS') && JSON.parse(localStorage.getItem('GLOBAL_CHAINS') || '')) || LOCAL_CHAIN_LIST;
 export const CHAIN_LIST = global_chains.map((item: any) => {
     return {
         value: item.label,
